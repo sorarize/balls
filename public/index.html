@@ -59,13 +59,17 @@
             if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
                 // 產生隨機顏色
                 const color = `rgb(${random(255)},${random(255)},${random(255)})`;
-                // 發送點擊位置和顏色到伺服器
-                const data = {
+                const newCircle = {
                     x: mouseX,
                     y: mouseY,
                     color: color
                 };
-                ws.send(JSON.stringify(data));
+
+                // 立即在本地添加和繪製
+                circles.push(newCircle);
+
+                // 發送到伺服器
+                ws.send(JSON.stringify(newCircle));
             }
         }
     </script>

@@ -18,7 +18,7 @@ const allCircles = [];
 
 // WebSocket 連接處理
 wss.on('connection', (ws) => {
-    // 當新客戶端連接時，發送所有現有的圓形資料
+    // 立即發送初始化數據
     ws.send(JSON.stringify({
         type: 'init',
         circles: allCircles
@@ -26,16 +26,17 @@ wss.on('connection', (ws) => {
 
     ws.on('message', (message) => {
         const data = JSON.parse(message);
-        // 將新的圓形加入儲存陣列
         allCircles.push(data);
 
-        // 廣播給所有客戶端
+        // 使用更高效的廣播方式
+        const updateMessage = JSON.stringify({
+            type: 'update',
+            circle: data
+        });
+
         wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
-                    type: 'update',
-                    circle: data
-                }));
+            if (client !== ws && client.readyState === WebSocket.OPEN) {
+                client.send(updateMessage);
             }
         });
     });
