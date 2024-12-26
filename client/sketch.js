@@ -15,7 +15,9 @@ export function setupCanvas() {
       // 建立 WebSocket 連接
       const wsUrl = import.meta.env.DEV
         ? `ws://${window.location.hostname}:3001`  // 開發環境
-        : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}://${window.location.host}`;  // 生產環境
+        : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`;  // 生產環境
+
+      xx('Connecting to WebSocket URL:', wsUrl); // 添加日誌來檢查 URL
 
       // 添加更多的錯誤處理和重試邏輯
       let retryCount = 0;
