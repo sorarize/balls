@@ -50,7 +50,8 @@ app.get('/', (req, res) => {
     res.send('WebSocket 伺服器運行中');
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`伺服器運行在 port ${PORT}`);
+// 使用 Railway 提供的 PORT 環境變數，如果沒有則使用 3000
+const port = process.env.PORT || 3000;
+server.listen(port, () => {
+    console.log(`WebSocket server is running on port ${port}`);
 });
