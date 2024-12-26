@@ -58,16 +58,22 @@ wss.on('connection', (ws) => {
 
 // 在生產環境中提供靜態檔案
 if (process.env.NODE_ENV === 'production') {
+  // 提供靜態檔案
   app.use(express.static(join(__dirname, '../dist')));
+
+  // 所有的路由都返回 index.html
+  app.get('*', (req, res) => {
+    res.sendFile(join(__dirname, '../dist/index.html'));
+  });
+} else {
+  // 開發環境的路由
+  app.get('/', (req, res) => {
+    res.send('WebSocket 伺服器運行中');
+  });
 }
 
-// 基本的 HTTP 路由
-app.get('/', (req, res) => {
-  res.send('WebSocket 伺服器運行中');
-});
-
-// 使用固定的端口
-const PORT = 3001;
+// 使用 Railway 提供的 PORT 環境變數
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   xx(`Server running on port ${PORT}`);
 });

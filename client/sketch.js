@@ -14,8 +14,8 @@ export function setupCanvas() {
 
       // 建立 WebSocket 連接
       const wsUrl = import.meta.env.DEV
-        ? `ws://${window.location.hostname}:3001`  // 直接連接到 WebSocket 伺服器
-        : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}://${window.location.host}/socket`;
+        ? `ws://${window.location.hostname}:3001`  // 開發環境
+        : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}://${window.location.host}`;  // 生產環境
 
       // 添加更多的錯誤處理和重試邏輯
       let retryCount = 0;
