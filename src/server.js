@@ -1,58 +1,73 @@
-const express = require('express');
-const http = require('http');
-const WebSocket = require('ws');
-const dotenv = require('dotenv');
+import express from 'express';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import xx from './xx.js';
+
+// 設定 __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // 載入環境變數
 dotenv.config();
 
 const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
-// 添加靜態檔案服務
-app.use(express.static('public'));
+const server = createServer(app);
+const wss = new WebSocketServer({ server });
 
 // 儲存所有圓形的陣列
-const allCircles = [];
+const circles = [];
 
 // WebSocket 連接處理
 wss.on('connection', (ws) => {
-    // 立即發送初始化數據
-    ws.send(JSON.stringify({
-        type: 'init',
-        circles: allCircles
-    }));
+  xx('Client connected');
 
-    ws.on('message', (message) => {
-        const data = JSON.parse(message);
-        allCircles.push(data);
+  // 發送現有的圓形數據
+  ws.send(JSON.stringify({
+    type: 'init',
+    circles: circles
+  }));
 
-        // 使用更高效的廣播方式
-        const updateMessage = JSON.stringify({
-            type: 'update',
-            circle: data
-        });
+  ws.on('message', (message) => {
+    try {
+      const data = JSON.parse(message.toString());
+      xx('message', data);
+      circles.push(data);
 
-        wss.clients.forEach((client) => {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(updateMessage);
-            }
-        });
-    });
+      // 廣播給其他客戶端
+      wss.clients.forEach((client) => {
+        if (client !== ws && client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(data));
+        }
+      });
+    } catch (error) {
+      console.error('Error processing message:', error);
+    }
+  });
 
-    ws.on('close', () => {
-        console.log('客戶端斷開連接');
-    });
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
+  });
+
+  ws.on('close', () => {
+    xx('Client disconnected');
+  });
 });
+
+// 在生產環境中提供靜態檔案
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(join(__dirname, '../dist')));
+}
 
 // 基本的 HTTP 路由
 app.get('/', (req, res) => {
-    res.send('WebSocket 伺服器運行中');
+  res.send('WebSocket 伺服器運行中');
 });
 
-// 使用 Railway 提供的 PORT 環境變數，如果沒有則使用 3000
-const port = process.env.PORT || 3000;
-server.listen(port, () => {
-    console.log(`WebSocket server is running on port ${port}`);
+// 使用固定的端口
+const PORT = 3001;
+server.listen(PORT, () => {
+  xx(`Server running on port ${PORT}`);
 });

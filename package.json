@@ -1,10 +1,15 @@
 {
   "scripts": {
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "dev:server": "nodemon src/server.js",
+    "dev:client": "vite",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "name": "balls",
   "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -13,5 +18,11 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "ws": "^8.x.x"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3",
+    "p5": "^1.11.2",
+    "vite": "^5.4.11",
+    "concurrently": "^8.2.2"
   }
 }
