@@ -73,12 +73,22 @@ export function setupCanvas() {
     };
 
     p.mousePressed = () => {
+      handleInteraction(p.mouseX, p.mouseY);
+    };
+
+    p.touchStarted = () => {
+      handleInteraction(p.touches[0].x, p.touches[0].y);
+      return false; // 防止預設的觸控行為（如滾動）
+    };
+
+    // 抽取共用的互動處理邏輯
+    const handleInteraction = (x, y) => {
       if (ws && ws.readyState === WebSocket.OPEN &&
-          p.mouseX >= 0 && p.mouseX <= p.width &&
-          p.mouseY >= 0 && p.mouseY <= p.height) {
+          x >= 0 && x <= p.width &&
+          y >= 0 && y <= p.height) {
         const data = {
-          x: p.mouseX,
-          y: p.mouseY,
+          x: x,
+          y: y,
           color: `rgb(${p.random(255)},${p.random(255)},${p.random(255)})`
         };
         // 先更新自己的畫面
