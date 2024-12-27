@@ -20,7 +20,6 @@ export class SocketManager {
       transports: ['polling', 'websocket'],
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
-      path: '/socket.io/',
       autoConnect: true,
       forceNew: true
     });

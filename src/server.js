@@ -18,8 +18,8 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production'
-      ? true  // 或者改為你的 Railway 域名，例如 "https://your-app.up.railway.app"
-      : ["http://localhost:5173"],
+      ? true
+      : "http://localhost:5173",
     methods: ["GET", "POST"],
     credentials: false,
     transports: ['polling', 'websocket']
@@ -72,10 +72,12 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// 使用環境變數中的端口或預設值
-const PORT = process.env.PORT || 3001;
+// 開發環境固定使用 3001 端口
+const PORT = process.env.NODE_ENV === 'production'
+  ? (process.env.PORT || 3001)
+  : 3001;
+
 server.listen(PORT, () => {
   xx(`Server running on port ${PORT}`);
+  xx('Environment:', process.env.NODE_ENV);
 });
-
-xx('NODE_ENV:', process.env.NODE_ENV);
