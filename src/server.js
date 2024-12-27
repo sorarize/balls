@@ -72,8 +72,8 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// 使用固定的端口
-const PORT = 3001;  // 改為固定使用 3001
+// 使用環境變數中的端口或預設值
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
   xx(`Server running on port ${PORT}`);
 });
