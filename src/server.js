@@ -17,7 +17,9 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173"],
+    origin: process.env.NODE_ENV === 'production'
+      ? true  // 或者改為你的 Railway 域名，例如 "https://your-app.up.railway.app"
+      : ["http://localhost:5173"],
     methods: ["GET", "POST"],
     credentials: false,
     transports: ['polling', 'websocket']
@@ -47,7 +49,14 @@ io.on('connection', (socket) => {
   });
 });
 
-// ��生產環境中提供靜態檔案
+// 在檔案開頭附近加入這行來檢查部署環境
+xx('Current environment:', {
+  NODE_ENV: process.env.NODE_ENV,
+  PORT: process.env.PORT,
+  RAILWAY_STATIC_URL: process.env.RAILWAY_STATIC_URL
+});
+
+// 生產環境中提供靜態檔案
 if (process.env.NODE_ENV === 'production') {
   // 提供靜態檔案
   app.use(express.static(join(__dirname, '../dist')));
