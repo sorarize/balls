@@ -1,6 +1,6 @@
 import express from 'express';
 import { createServer } from 'http';
-import { WebSocketServer } from 'ws';
+import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -15,48 +15,39 @@ dotenv.config();
 
 const app = express();
 const server = createServer(app);
-const wss = new WebSocketServer({ server });
+const io = new Server(server, {
+  cors: {
+    origin: ["http://localhost:5173"],
+    methods: ["GET", "POST"],
+    credentials: false,
+    transports: ['polling', 'websocket']
+  }
+});
 
 // 儲存所有圓形的陣列
 const circles = [];
 
-// WebSocket 連接處理
-wss.on('connection', (ws) => {
+// Socket.IO 連接處理
+io.on('connection', (socket) => {
   xx('Client connected');
 
   // 發送現有的圓形數據
-  ws.send(JSON.stringify({
-    type: 'init',
-    circles: circles
-  }));
+  socket.emit('init', { circles });
 
-  ws.on('message', (message) => {
-    try {
-      const data = JSON.parse(message.toString());
-      xx('message', data);
-      circles.push(data);
-
-      // 廣播給其他客戶端
-      wss.clients.forEach((client) => {
-        if (client !== ws && client.readyState === WebSocket.OPEN) {
-          client.send(JSON.stringify(data));
-        }
-      });
-    } catch (error) {
-      console.error('Error processing message:', error);
-    }
+  // 處理新的圓形
+  socket.on('new-circle', (data) => {
+    xx('New circle:', data);
+    circles.push(data);
+    // 廣播給其他客戶端
+    socket.broadcast.emit('circle-added', data);
   });
 
-  ws.on('error', (error) => {
-    console.error('WebSocket error:', error);
-  });
-
-  ws.on('close', () => {
+  socket.on('disconnect', () => {
     xx('Client disconnected');
   });
 });
 
-// 在生產環境中提供靜態檔案
+// ��生產環境中提供靜態檔案
 if (process.env.NODE_ENV === 'production') {
   // 提供靜態檔案
   app.use(express.static(join(__dirname, '../dist')));
@@ -68,12 +59,14 @@ if (process.env.NODE_ENV === 'production') {
 } else {
   // 開發環境的路由
   app.get('/', (req, res) => {
-    res.send('WebSocket 伺服器運行中');
+    res.send('Socket.IO 伺服器運行中');
   });
 }
 
-// 使用 Railway 提供的 PORT 環境變數
-const PORT = process.env.PORT || 3001;
+// 使用固定的端口
+const PORT = 3001;  // 改為固定使用 3001
 server.listen(PORT, () => {
   xx(`Server running on port ${PORT}`);
 });
+
+xx('NODE_ENV:', process.env.NODE_ENV);

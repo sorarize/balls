@@ -1,73 +1,73 @@
+import { io } from 'socket.io-client';
 import xx from '../src/xx';
 
-export class WebSocketManager {
+export class SocketManager {
   constructor() {
-    this.ws = null;
-    this.retryCount = 0;
-    this.maxRetries = 5;
+    this.socket = null;
     this.onMessageCallback = null;
     this.circles = [];
   }
 
   connect() {
-    const wsUrl = import.meta.env.DEV
-      ? `ws://localhost:3000`
-      : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`;
+    const serverUrl = import.meta.env.DEV
+      ? 'http://localhost:3001'
+      : window.location.origin;
 
-    xx('Connecting to WebSocket URL:', wsUrl);
+    xx('Connecting to Socket.IO server:', serverUrl);
 
-    this.connectWebSocket(wsUrl);
+    this.socket = io(serverUrl, {
+      withCredentials: false,
+      transports: ['polling', 'websocket'],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      path: '/socket.io/',
+      autoConnect: true,
+      forceNew: true
+    });
+
+    this.setupEventHandlers();
   }
 
-  connectWebSocket(wsUrl) {
-    this.ws = new WebSocket(wsUrl);
+  setupEventHandlers() {
+    this.socket.on('connect', () => {
+      xx('Socket.IO connected');
+    });
 
-    this.ws.onopen = () => {
-      xx('WebSocket connected');
-      this.retryCount = 0;
-    };
+    this.socket.on('disconnect', () => {
+      xx('Socket.IO disconnected');
+    });
 
-    this.ws.onerror = (error) => {
-      xx('WebSocket error:', error);
-    };
+    this.socket.on('connect_error', (error) => {
+      xx('Connection error:', error);
+    });
 
-    this.ws.onclose = () => {
-      xx('WebSocket disconnected');
-      if (this.retryCount < this.maxRetries) {
-        this.retryCount++;
-        xx(`Retrying connection... (${this.retryCount}/${this.maxRetries})`);
-        setTimeout(() => this.connectWebSocket(wsUrl), 1000);
-      }
-    };
+    this.socket.on('init', (data) => {
+      xx('Received initial data:', data);
+      this.circles = data.circles;
+      this.triggerCallback();
+    });
 
-    this.ws.onmessage = (event) => {
-      xx('onmessage', event);
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'init') {
-          this.circles = data.circles;
-        } else {
-          this.circles.push(data);
-        }
-        if (this.onMessageCallback) {
-          this.onMessageCallback();
-        }
-      } catch (error) {
-        xx('Error parsing message:', error);
-      }
-    };
+    this.socket.on('circle-added', (data) => {
+      xx('Received new circle:', data);
+      this.circles.push(data);
+      this.triggerCallback();
+    });
   }
 
   sendData(data) {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    if (this.socket && this.socket.connected) {
       this.circles.push(data);
-      this.ws.send(JSON.stringify(data));
-      if (this.onMessageCallback) {
-        this.onMessageCallback();
-      }
+      this.socket.emit('new-circle', data);
+      this.triggerCallback();
       return true;
     }
     return false;
+  }
+
+  triggerCallback() {
+    if (this.onMessageCallback) {
+      this.onMessageCallback();
+    }
   }
 
   setMessageCallback(callback) {

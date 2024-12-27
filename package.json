@@ -1,7 +1,7 @@
 {
   "scripts": {
     "start": "node src/server.js",
-    "dev:server": "nodemon src/server.js",
+    "dev:server": "cross-env NODE_ENV=development nodemon src/server.js",
     "dev:client": "vite",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "build": "vite build",
@@ -20,12 +20,14 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "ws": "^8.x.x"
+    "socket.io": "^4.7.4",
+    "socket.io-client": "^4.7.4"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
     "nodemon": "^3.0.3",
     "p5": "^1.11.2",
-    "vite": "^5.4.11",
-    "concurrently": "^8.2.2"
+    "vite": "^5.4.11"
   }
 }
