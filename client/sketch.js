@@ -1,19 +1,25 @@
 import p5 from 'p5';
 import { SocketManager } from './WebSocketManager';
+import { Circle } from './Circle';
 
 export function setupCanvas() {
   new p5((p) => {
     const socketManager = new SocketManager();
+    let circles = [];
 
     p.setup = () => {
       const canvas = p.createCanvas(800, 600);
       canvas.parent('canvas-container');
       p.background(200);
-      p.noLoop();
 
       // 設定 WebSocket 訊息回調
-      socketManager.setMessageCallback(() => {
-        p.redraw();
+      socketManager.setMessageCallback((data) => {
+        if (data.type === 'init') {
+          // 將接收到的數據轉換為 Circle 實例
+          circles = data.circles.map(c => Circle.fromJSON(c));
+        } else if (data.type === 'circle-added') {
+          circles.push(Circle.fromJSON(data));
+        }
       });
 
       // 連接 WebSocket
@@ -22,10 +28,11 @@ export function setupCanvas() {
 
     p.draw = () => {
       p.background(200);
-      socketManager.getCircles().forEach(circle => {
-        p.fill(circle.color);
-        p.noStroke();
-        p.ellipse(circle.x, circle.y, 20, 20);
+
+      // 更新所有圓形的位置
+      circles.forEach(circle => {
+        circle.update(circles);
+        circle.draw(p);
       });
     };
 
@@ -35,18 +42,22 @@ export function setupCanvas() {
 
     p.touchStarted = () => {
       handleInteraction(p.touches[0].x, p.touches[0].y);
-      return false; // 防止預設的觸控行為
+      return false;
     };
 
-    // 抽取共用的互動處理邏輯
     const handleInteraction = (x, y) => {
       if (x >= 0 && x <= p.width && y >= 0 && y <= p.height) {
-        const data = {
-          x: x,
-          y: y,
-          color: `rgb(${p.random(255)},${p.random(255)},${p.random(255)})`,
-        };
-        socketManager.sendData(data);
+        const circle = new Circle(
+          x,
+          y,
+          `rgb(${p.random(255)},${p.random(255)},${p.random(255)})`,
+          50  // minDist
+        );
+
+        // 先添加到本地
+        circles.push(circle);
+        // 再發送到伺服器
+        socketManager.sendData(circle.toJSON());
       }
     };
   });

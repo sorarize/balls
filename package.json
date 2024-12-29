@@ -2,7 +2,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev:server": "cross-env NODE_ENV=development nodemon src/server.js",
-    "dev:client": "vite",
+    "dev:client": "vite --host",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "build": "vite build",
     "preview": "vite preview",

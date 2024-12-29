@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import xx from './xx.js';
+import os from 'os';
 
 // 設定 __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -19,7 +20,11 @@ const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production'
       ? true
-      : 'http://localhost:5173',
+      : [
+          'http://localhost:5173',
+          'http://127.0.0.1:5173',
+          `http://${getLocalIPs()[0]}:5173`,  // 添加本地網路 IP
+        ],
     methods: ['GET', 'POST'],
     credentials: false,
     transports: ['polling', 'websocket'],
@@ -40,7 +45,7 @@ io.on('connection', (socket) => {
   socket.on('new-circle', (data) => {
     xx('New circle:', data);
     circles.push(data);
-    // 廣播給其他客戶端
+    // 只廣播給其他客戶端（不包括發送者）
     socket.broadcast.emit('circle-added', data);
   });
 
@@ -72,6 +77,22 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+// 獲取本機 IP 地址的函數
+function getLocalIPs() {
+  const interfaces = os.networkInterfaces();
+  const addresses = [];
+
+  for (const k in interfaces) {
+    for (const k2 in interfaces[k]) {
+      const address = interfaces[k][k2];
+      if (address.family === 'IPv4' && !address.internal) {
+        addresses.push(address.address);
+      }
+    }
+  }
+  return addresses;
+}
+
 // 開發環境固定使用 3001 端口
 const PORT = process.env.NODE_ENV === 'production'
   ? (process.env.PORT || 3001)
@@ -80,4 +101,13 @@ const PORT = process.env.NODE_ENV === 'production'
 server.listen(PORT, () => {
   xx(`Server running on port ${PORT}`);
   xx('Environment:', process.env.NODE_ENV);
+
+  // 顯示所有可用的 IP 地址
+  const ips = getLocalIPs();
+  xx('Available on:');
+  xx(`  > Local:    http://localhost:${PORT}`);
+  ips.forEach(ip => {
+    xx(`  > Network:  http://${ip}:${PORT}`);
+    xx(`  > WebSocket: ws://${ip}:${PORT}`);
+  });
 });

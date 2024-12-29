@@ -5,19 +5,18 @@ export class SocketManager {
   constructor() {
     this.socket = null;
     this.onMessageCallback = null;
-    this.circles = [];
   }
 
   connect() {
     const serverUrl = import.meta.env.DEV
-      ? 'http://localhost:3001'
+      ? `ws://${window.location.hostname}:3001`
       : window.location.origin;
 
     xx('Connecting to Socket.IO server:', serverUrl);
 
     this.socket = io(serverUrl, {
       withCredentials: false,
-      transports: ['polling', 'websocket'],
+      transports: ['websocket', 'polling'],
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       autoConnect: true,
@@ -42,38 +41,28 @@ export class SocketManager {
 
     this.socket.on('init', (data) => {
       xx('Received initial data:', data);
-      this.circles = data.circles;
-      this.triggerCallback();
+      if (this.onMessageCallback) {
+        this.onMessageCallback({ type: 'init', circles: data.circles });
+      }
     });
 
     this.socket.on('circle-added', (data) => {
       xx('Received new circle:', data);
-      this.circles.push(data);
-      this.triggerCallback();
+      if (this.onMessageCallback) {
+        this.onMessageCallback({ type: 'circle-added', ...data });
+      }
     });
   }
 
   sendData(data) {
     if (this.socket && this.socket.connected) {
-      this.circles.push(data);
       this.socket.emit('new-circle', data);
-      this.triggerCallback();
       return true;
     }
     return false;
   }
 
-  triggerCallback() {
-    if (this.onMessageCallback) {
-      this.onMessageCallback();
-    }
-  }
-
   setMessageCallback(callback) {
     this.onMessageCallback = callback;
-  }
-
-  getCircles() {
-    return this.circles;
   }
 }
