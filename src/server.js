@@ -94,6 +94,17 @@ io.on('connection', (socket) => {
     }
   });
 
+  // 添加清除處理
+  socket.on('clear-all', () => {
+    xx('Clearing all circles from server');
+    // 清除所有使用者的圓形
+    for (const user of users.values()) {
+      user.circles = [];
+    }
+    // 廣播清除事件給所有客戶端
+    io.emit('clear-all');
+  });
+
   socket.on('disconnect', () => {
     xx('Client disconnected:', clientIP);
   });

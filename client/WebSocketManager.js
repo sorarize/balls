@@ -74,6 +74,13 @@ export class SocketManager {
         });
       }
     });
+
+    this.socket.on('clear-all', () => {
+      xx('Clearing all circles');
+      if (this.onMessageCallback) {
+        this.onMessageCallback({ type: 'clear-all' });
+      }
+    });
   }
 
   sendData(data) {
@@ -86,5 +93,13 @@ export class SocketManager {
 
   setMessageCallback(callback) {
     this.onMessageCallback = callback;
+  }
+
+  clearAll() {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('clear-all');
+      return true;
+    }
+    return false;
   }
 }

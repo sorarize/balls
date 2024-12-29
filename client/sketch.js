@@ -30,6 +30,9 @@ export function setupCanvas() {
           if (circle) {
             circle.updatePosition(data.x, data.y);
           }
+        } else if (data.type === 'clear-all') {
+          circles = [];
+          userCircles = [];
         }
       });
 
@@ -83,6 +86,14 @@ export function setupCanvas() {
         }
 
         socketManager.sendData(circle.toJSON());
+      }
+    };
+
+    p.keyPressed = () => {
+      if (p.key === 's' || p.key === 'S') {
+        xx('Clearing all circles');
+        socketManager.clearAll();
+        return false;  // 防止默認行為
       }
     };
   });
