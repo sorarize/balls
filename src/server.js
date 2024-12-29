@@ -19,11 +19,11 @@ const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production'
       ? true
-      : "http://localhost:5173",
-    methods: ["GET", "POST"],
+      : 'http://localhost:5173',
+    methods: ['GET', 'POST'],
     credentials: false,
-    transports: ['polling', 'websocket']
-  }
+    transports: ['polling', 'websocket'],
+  },
 });
 
 // 儲存所有圓形的陣列
@@ -53,7 +53,7 @@ io.on('connection', (socket) => {
 xx('Current environment:', {
   NODE_ENV: process.env.NODE_ENV,
   PORT: process.env.PORT,
-  RAILWAY_STATIC_URL: process.env.RAILWAY_STATIC_URL
+  RAILWAY_STATIC_URL: process.env.RAILWAY_STATIC_URL,
 });
 
 // 生產環境中提供靜態檔案

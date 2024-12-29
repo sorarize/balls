@@ -44,7 +44,7 @@ export function setupCanvas() {
         const data = {
           x: x,
           y: y,
-          color: `rgb(${p.random(255)},${p.random(255)},${p.random(255)})`
+          color: `rgb(${p.random(255)},${p.random(255)},${p.random(255)})`,
         };
         socketManager.sendData(data);
       }

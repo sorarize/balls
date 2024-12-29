@@ -7,13 +7,13 @@ export default defineConfig({
         target: 'http://localhost:3001',
         ws: true,
         secure: false,
-        changeOrigin: true
-      }
-    }
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true
-  }
+    sourcemap: true,
+  },
 });

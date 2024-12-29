@@ -1,3 +1,4 @@
-export default function xx(...args) {
-  return console.log(...args);
-}
+/* eslint-disable no-console */
+export default (...args) => {
+  console.log(...args);
+};

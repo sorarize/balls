@@ -21,7 +21,7 @@ export class SocketManager {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       autoConnect: true,
-      forceNew: true
+      forceNew: true,
     });
 
     this.setupEventHandlers();

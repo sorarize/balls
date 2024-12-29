@@ -5,7 +5,10 @@
     "dev:client": "vite",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint src/ client/",
+    "lint:fix": "eslint src/ client/ --fix",
+    "prepare": "husky install"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -24,10 +27,21 @@
     "socket.io-client": "^4.7.4"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
+    "eslint": "^8.57.0",
+    "eslint-plugin-import": "^2.31.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.3.0",
     "nodemon": "^3.0.3",
     "p5": "^1.11.2",
     "vite": "^5.4.11"
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix"
+    ]
   }
 }
