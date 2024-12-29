@@ -1,6 +1,7 @@
 import p5 from 'p5';
 import { SocketManager } from './WebSocketManager';
 import { Circle } from './Circle';
+import xx from '../src/xx';
 
 export function setupCanvas() {
   new p5((p) => {
@@ -20,9 +21,9 @@ export function setupCanvas() {
           circles = data.circles.map(c => Circle.fromJSON(c));
           userColor = data.userColor;
           userCircles = data.userCircles;
-          console.log('Received user color:', data.userColor);
+          xx('Received user color:', data.userColor);
         } else if (data.type === 'circle-added') {
-          console.log('Adding circle with color:', data.color);
+          xx('Adding circle with color:', data.color);
           circles.push(Circle.fromJSON(data));
         } else if (data.type === 'update-circle') {
           const circle = circles.find(c => c.id === data.id);
@@ -56,12 +57,12 @@ export function setupCanvas() {
 
     const handleInteraction = (x, y) => {
       if (x >= 0 && x <= p.width && y >= 0 && y <= p.height && userColor) {
-        console.log('Creating circle with color:', userColor);
+        xx('Creating circle with color:', userColor);
         const circle = new Circle(
           x,
           y,
           { ...userColor },
-          50
+          50,
         );
 
         // 在本地也處理 10 個球的限制

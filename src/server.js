@@ -20,15 +20,15 @@ const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production'
       ? [
-          process.env.RAILWAY_STATIC_URL
-            ? `https://${process.env.RAILWAY_STATIC_URL}`
-            : true,
-        ]
+        process.env.RAILWAY_STATIC_URL
+          ? `https://${process.env.RAILWAY_STATIC_URL}`
+          : true,
+      ]
       : [
-          'http://localhost:5173',
-          'http://127.0.0.1:5173',
-          `http://${getLocalIPs()[0]}:5173`,
-        ],
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        `http://${getLocalIPs()[0]}:5173`,
+      ],
     methods: ['GET', 'POST'],
     credentials: false,
     transports: ['polling', 'websocket'],
@@ -43,7 +43,7 @@ function generateRandomColor() {
   return {
     h: Math.random() * 360,  // 色相 0-360
     s: 70,                   // 飽和度固定在 70%
-    l: 50                    // 亮度固定在 50%
+    l: 50,                    // 亮度固定在 50%
   };
 }
 
@@ -62,7 +62,7 @@ io.on('connection', (socket) => {
   if (!users.has(clientIP)) {
     users.set(clientIP, {
       color: generateRandomColor(),
-      circles: []
+      circles: [],
     });
   }
 
@@ -72,7 +72,7 @@ io.on('connection', (socket) => {
   socket.emit('init', {
     circles: Array.from(users.values()).flatMap(u => u.circles),
     userColor: user.color,
-    userCircles: user.circles
+    userCircles: user.circles,
   });
 
   // 處理新的圓形

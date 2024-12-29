@@ -1,3 +1,5 @@
+import xx from '../src/xx';
+
 export class Circle {
   constructor(x, y, color, minDist = 50, id = null) {
     this.x = x;
@@ -42,7 +44,7 @@ export class Circle {
 
   draw(p) {
     if (!this.color || typeof this.color !== 'object') {
-      console.error('Invalid color:', this.color);
+      xx('Invalid color:', this.color);
       p.fill(0, 0, 50); // 使用默認顏色（灰色）
     } else {
       const { h = 0, s = 70, l = 50 } = this.color; // 提供默認值

@@ -46,7 +46,7 @@ export class SocketManager {
           type: 'init',
           circles: data.circles,
           userColor: data.userColor,
-          userCircles: data.userCircles
+          userCircles: data.userCircles,
         });
       }
     });
@@ -70,7 +70,7 @@ export class SocketManager {
       if (this.onMessageCallback) {
         this.onMessageCallback({
           type: 'update-circle',
-          ...data
+          ...data,
         });
       }
     });
