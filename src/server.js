@@ -19,11 +19,15 @@ const server = createServer(app);
 const io = new Server(server, {
   cors: {
     origin: process.env.NODE_ENV === 'production'
-      ? true
+      ? [
+          process.env.RAILWAY_STATIC_URL
+            ? `https://${process.env.RAILWAY_STATIC_URL}`
+            : true,
+        ]
       : [
           'http://localhost:5173',
           'http://127.0.0.1:5173',
-          `http://${getLocalIPs()[0]}:5173`,  // 添加本地網路 IP
+          `http://${getLocalIPs()[0]}:5173`,
         ],
     methods: ['GET', 'POST'],
     credentials: false,
@@ -31,26 +35,67 @@ const io = new Server(server, {
   },
 });
 
-// 儲存所有圓形的陣列
-const circles = [];
+// 儲存使用者資訊
+const users = new Map(); // key: IP, value: { color, circles: [] }
+
+// 生成隨機顏色
+function generateRandomColor() {
+  return {
+    h: Math.random() * 360,  // 色相 0-360
+    s: 70,                   // 飽和度固定在 70%
+    l: 50                    // 亮度固定在 50%
+  };
+}
+
+// 獲取客戶端 IP
+function getClientIP(socket) {
+  return socket.handshake.headers['x-forwarded-for'] ||
+         socket.handshake.address;
+}
 
 // Socket.IO 連接處理
 io.on('connection', (socket) => {
-  xx('Client connected');
+  const clientIP = getClientIP(socket);
+  xx('Client connected from:', clientIP);
 
-  // 發送現有的圓形數據
-  socket.emit('init', { circles });
+  // 檢查是否是已存在的使用者
+  if (!users.has(clientIP)) {
+    users.set(clientIP, {
+      color: generateRandomColor(),
+      circles: []
+    });
+  }
+
+  const user = users.get(clientIP);
+
+  // 發送初始資料，包括使用者資訊
+  socket.emit('init', {
+    circles: Array.from(users.values()).flatMap(u => u.circles),
+    userColor: user.color,
+    userCircles: user.circles
+  });
 
   // 處理新的圓形
   socket.on('new-circle', (data) => {
-    xx('New circle:', data);
-    circles.push(data);
-    // 只廣播給其他客戶端（不包括發送者）
-    socket.broadcast.emit('circle-added', data);
+    const user = users.get(clientIP);
+
+    // 添加使用者顏色（創建副本）
+    data.color = { ...user.color };
+
+    if (user.circles.length >= 10) {
+      const oldCircle = user.circles.shift();
+      data.id = oldCircle.id;
+      user.circles.push(data);
+      io.emit('update-circle', data);
+    } else {
+      data.id = Date.now() + Math.random();
+      user.circles.push(data);
+      socket.broadcast.emit('circle-added', data);
+    }
   });
 
   socket.on('disconnect', () => {
-    xx('Client disconnected');
+    xx('Client disconnected:', clientIP);
   });
 });
 

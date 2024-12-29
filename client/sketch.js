@@ -6,23 +6,32 @@ export function setupCanvas() {
   new p5((p) => {
     const socketManager = new SocketManager();
     let circles = [];
+    let userColor = null;
+    let userCircles = [];
 
     p.setup = () => {
       const canvas = p.createCanvas(800, 600);
       canvas.parent('canvas-container');
       p.background(200);
+      p.colorMode(p.HSL, 360, 100, 100);
 
-      // 設定 WebSocket 訊息回調
       socketManager.setMessageCallback((data) => {
         if (data.type === 'init') {
-          // 將接收到的數據轉換為 Circle 實例
           circles = data.circles.map(c => Circle.fromJSON(c));
+          userColor = data.userColor;
+          userCircles = data.userCircles;
+          console.log('Received user color:', data.userColor);
         } else if (data.type === 'circle-added') {
+          console.log('Adding circle with color:', data.color);
           circles.push(Circle.fromJSON(data));
+        } else if (data.type === 'update-circle') {
+          const circle = circles.find(c => c.id === data.id);
+          if (circle) {
+            circle.updatePosition(data.x, data.y);
+          }
         }
       });
 
-      // 連接 WebSocket
       socketManager.connect();
     };
 
@@ -46,17 +55,31 @@ export function setupCanvas() {
     };
 
     const handleInteraction = (x, y) => {
-      if (x >= 0 && x <= p.width && y >= 0 && y <= p.height) {
+      if (x >= 0 && x <= p.width && y >= 0 && y <= p.height && userColor) {
+        console.log('Creating circle with color:', userColor);
         const circle = new Circle(
           x,
           y,
-          `rgb(${p.random(255)},${p.random(255)},${p.random(255)})`,
-          50  // minDist
+          { ...userColor },
+          50
         );
 
-        // 先添加到本地
-        circles.push(circle);
-        // 再發送到伺服器
+        // 在本地也處理 10 個球的限制
+        if (userCircles.length >= 10) {
+          // 找到並更新最舊的圓形
+          const oldCircle = userCircles[0];
+          const existingCircle = circles.find(c => c.id === oldCircle.id);
+          if (existingCircle) {
+            existingCircle.updatePosition(x, y);
+            // 更新 userCircles 中的位置
+            oldCircle.x = x;
+            oldCircle.y = y;
+          }
+        } else {
+          circles.push(circle);
+          userCircles.push(circle.toJSON());
+        }
+
         socketManager.sendData(circle.toJSON());
       }
     };

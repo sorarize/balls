@@ -1,9 +1,10 @@
 export class Circle {
-  constructor(x, y, color, minDist = 50) {
+  constructor(x, y, color, minDist = 50, id = null) {
     this.x = x;
     this.y = y;
     this.color = color;
     this.minDist = minDist;
+    this.id = id || Date.now() + Math.random();
     this.velocity = { x: 0, y: 0 };
     this.radius = 10;
     this.repulsionForce = 0.5;  // 排斥力大小
@@ -40,7 +41,13 @@ export class Circle {
   }
 
   draw(p) {
-    p.fill(this.color);
+    if (!this.color || typeof this.color !== 'object') {
+      console.error('Invalid color:', this.color);
+      p.fill(0, 0, 50); // 使用默認顏色（灰色）
+    } else {
+      const { h = 0, s = 70, l = 50 } = this.color; // 提供默認值
+      p.fill(h, s, l);
+    }
     p.noStroke();
     p.ellipse(this.x, this.y, this.radius * 2);
   }
@@ -51,10 +58,23 @@ export class Circle {
       y: this.y,
       color: this.color,
       minDist: this.minDist,
+      id: this.id,
     };
   }
 
+  updatePosition(x, y) {
+    this.x = x;
+    this.y = y;
+    // 重置速度
+    this.velocity = { x: 0, y: 0 };
+  }
+
   static fromJSON(data) {
-    return new Circle(data.x, data.y, data.color, data.minDist);
+    // 確保顏色對象被正確傳遞
+    const color = data.color && typeof data.color === 'object'
+      ? { ...data.color }  // 創建顏色對象的副本
+      : { h: 0, s: 70, l: 50 }; // 默認顏色
+
+    return new Circle(data.x, data.y, color, data.minDist, data.id);
   }
 }

@@ -42,7 +42,12 @@ export class SocketManager {
     this.socket.on('init', (data) => {
       xx('Received initial data:', data);
       if (this.onMessageCallback) {
-        this.onMessageCallback({ type: 'init', circles: data.circles });
+        this.onMessageCallback({
+          type: 'init',
+          circles: data.circles,
+          userColor: data.userColor,
+          userCircles: data.userCircles
+        });
       }
     });
 
@@ -50,6 +55,23 @@ export class SocketManager {
       xx('Received new circle:', data);
       if (this.onMessageCallback) {
         this.onMessageCallback({ type: 'circle-added', ...data });
+      }
+    });
+
+    this.socket.on('remove-circle', (data) => {
+      xx('Circle removed:', data);
+      if (this.onMessageCallback) {
+        this.onMessageCallback({ type: 'remove-circle', ...data });
+      }
+    });
+
+    this.socket.on('update-circle', (data) => {
+      xx('Circle updated:', data);
+      if (this.onMessageCallback) {
+        this.onMessageCallback({
+          type: 'update-circle',
+          ...data
+        });
       }
     });
   }
