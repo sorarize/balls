@@ -68,13 +68,14 @@ export function setupCanvas() {
         // 在本地也處理 10 個球的限制
         if (userCircles.length >= 10) {
           // 找到並更新最舊的圓形
-          const oldCircle = userCircles[0];
+          const oldCircle = userCircles.shift(); // 移除最舊的
           const existingCircle = circles.find(c => c.id === oldCircle.id);
           if (existingCircle) {
             existingCircle.updatePosition(x, y);
-            // 更新 userCircles 中的位置
+            // 更新後將這個圓形放到陣列末端（成為最新的）
             oldCircle.x = x;
             oldCircle.y = y;
+            userCircles.push(oldCircle);
           }
         } else {
           circles.push(circle);

@@ -83,9 +83,9 @@ io.on('connection', (socket) => {
     data.color = { ...user.color };
 
     if (user.circles.length >= 10) {
-      const oldCircle = user.circles.shift();
+      const oldCircle = user.circles.shift(); // 移除最舊的
       data.id = oldCircle.id;
-      user.circles.push(data);
+      user.circles.push(data);  // 將更新後的圓形放到末端
       io.emit('update-circle', data);
     } else {
       data.id = Date.now() + Math.random();
