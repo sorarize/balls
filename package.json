@@ -8,7 +8,8 @@
     "preview": "vite preview",
     "lint": "eslint src/ client/",
     "lint:fix": "eslint src/ client/ --fix",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "install:prod": "npm ci --omit=dev"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -16,15 +17,24 @@
   "name": "balls",
   "version": "1.0.0",
   "type": "module",
-  "keywords": [],
-  "author": "",
+  "description": "A real-time collaborative canvas using Socket.IO and p5.js",
+  "keywords": [
+    "socket.io",
+    "p5js",
+    "canvas",
+    "real-time",
+    "collaborative"
+  ],
+  "author": {
+    "name": "Your Name"
+  },
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "socket.io": "^4.7.4",
-    "socket.io-client": "^4.7.4"
+    "socket.io-client": "^4.7.4",
+    "p5": "^1.11.2"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.1.0",
@@ -36,12 +46,25 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.3.0",
     "nodemon": "^3.0.3",
-    "p5": "^1.11.2",
     "vite": "^5.4.11"
   },
   "lint-staged": {
     "*.js": [
       "eslint --fix"
     ]
-  }
+  },
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/balls.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/balls/issues"
+  },
+  "homepage": "https://github.com/yourusername/balls#readme",
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ]
 }
