@@ -60,7 +60,7 @@ export class Circle {
       xx('Invalid color:', this.color);
       p.fill(0, 0, 50);
     } else {
-      const { h = 0, s = 70, l = 50 } = this.color;
+      const { h = 0, s = Config.SATURATION, l = Config.LIGHTNESS } = this.color;
       p.fill(h, s, l);
     }
     p.noStroke();
@@ -87,7 +87,7 @@ export class Circle {
   static fromJSON(data) {
     const color = data.color && typeof data.color === 'object'
       ? { ...data.color }
-      : { h: 0, s: 70, l: 50 };
+      : { h: 0, s: Config.SATURATION, l: Config.LIGHTNESS };
 
     return new Circle(
       data.x,

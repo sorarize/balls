@@ -1,7 +1,9 @@
 import './style.css';
 import { setupCanvas } from './sketch';
+import Settings from './Settings';
 import addControls from './Controls';
 
+Settings.init();
 addControls();
 
 document.querySelector('#app').innerHTML = `

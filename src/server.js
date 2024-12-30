@@ -47,9 +47,9 @@ let masterId = null;
 // 生成隨機顏色
 function generateRandomColor() {
   return {
-    h: Math.random() * 360,  // 色相 0-360
-    s: 70,                   // 飽和度固定在 70%
-    l: 50,                    // 亮度固定在 50%
+    h: Math.random() * 360,
+    s: Config.SATURATION,
+    l: Config.LIGHTNESS,
   };
 }
 
@@ -283,6 +283,15 @@ io.on('connection', (socket) => {
     user.behaviorCode = data.code;
     // 改成發送給所有客戶端，包括發送者
     io.emit('behavior-updated', { code: data.code });
+  });
+
+  // 處理設定更新
+  socket.on('update-config', (newConfig) => {
+    xx('Received config update:', newConfig);
+    // 更新伺服器端的設定
+    Object.assign(Config, newConfig);
+    // 廣播給所有客戶端
+    io.emit('config-updated', Config);
   });
 });
 

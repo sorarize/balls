@@ -1,5 +1,5 @@
 import p5 from 'p5';
-import { SocketManager } from './WebSocketManager';
+import { socketManager } from './WebSocketManager';
 import { Circle } from './Circle';
 import xx from './xx';
 import Config from './Config';
@@ -9,14 +9,13 @@ window.p5 = p5;
 
 export function setupCanvas() {
   new p5((p) => {
-    const socketManager = new SocketManager();
     let circles = [];
     let userColor = null;
     let userId = null;
     let userCircles = [];
     let customBehaviorTextarea;
     let applyButton;
-    let isMaster = false;  // 添加 master 狀態
+    let isMaster = false;
     let user = {
       id: null,
     };
@@ -239,10 +238,7 @@ function update(circle, others) {
               circle.pos.y - circle.radius > p.height) {
             xx('Circle out of bounds, removing:', circle.id);
             circles.splice(index, 1);
-            socketManager.sendData({
-              type: 'remove-circle',
-              id: circle.id,
-            });
+            socketManager.removeCircle(circle.id);
           }
         });
 
@@ -289,7 +285,7 @@ function update(circle, others) {
           id: Date.now() + Math.random(),
         };
 
-        socketManager.sendData(circleData);
+        socketManager.addCircle(circleData);
       }
     };
 

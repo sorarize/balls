@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client';
 import xx from './xx';
 
-export class SocketManager {
+class SocketManager {
   constructor() {
     this.socket = null;
     this.onMessageCallback = null;
@@ -125,11 +125,18 @@ export class SocketManager {
         this.onMessageCallback({ type: 'you-are-master', masterId: data.masterId });
       }
     });
+
+    this.socket.on('config-updated', (config) => {
+      xx('Received config update from server:', config);
+      if (this.onMessageCallback) {
+        this.onMessageCallback({ type: 'config-updated', config });
+      }
+    });
   }
 
-  sendData(data) {
+  addCircle(circleData) {
     if (this.socket && this.socket.connected) {
-      this.socket.emit('new-circle', data);
+      this.socket.emit('new-circle', circleData);
       return true;
     }
     return false;
@@ -162,4 +169,23 @@ export class SocketManager {
     }
     return false;
   }
+
+  updateConfig(config) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('update-config', config );
+      return true;
+    }
+    return false;
+  }
+
+  removeCircle(circleId) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('remove-circle', { id: circleId });
+      return true;
+    }
+    return false;
+  }
 }
+
+// 創建並導出單一實例
+export const socketManager = new SocketManager();
