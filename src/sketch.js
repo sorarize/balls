@@ -19,7 +19,7 @@ export function setupCanvas() {
     let isMaster = false;  // 添加 master 狀態
     let user = {
       id: null,
-      connectedAt: null
+      connectedAt: null,
     };
 
     p.setup = () => {
@@ -107,7 +107,7 @@ function update(circle, others) {
           isMaster = data.isMaster;
           user = {
             id: userId,
-            connectedAt: data.connectedAt
+            connectedAt: data.connectedAt,
           };
           updateDebugInfo();
           xx('Initialized as', isMaster ? 'master' : 'slave', 'userId:', userId);

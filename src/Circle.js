@@ -96,7 +96,7 @@ export class Circle {
       data.minDist,
       data.id,
       data.userId,
-      data.radius
+      data.radius,
     );
   }
 

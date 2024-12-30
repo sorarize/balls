@@ -92,7 +92,7 @@ io.on('connection', (socket) => {
       color: generateRandomColor(),
       circles: [],
       behaviorCode: null,
-      connectedAt: Date.now()
+      connectedAt: Date.now(),
     };
     users.set(userIdentifier, newUser);
   }
@@ -207,7 +207,7 @@ io.on('connection', (socket) => {
     const circle = user.circles.find(c => c.id === data.id);
     if (user.id === masterId || (circle && circle.userId === user.id)) {
       // 從所有使用者的 circles 中找到並移除該球
-      for (const [_, userData] of users) {
+      for (const userData of users.values()) {
         const index = userData.circles.findIndex(c => c.id === data.id);
         if (index !== -1) {
           userData.circles.splice(index, 1);
