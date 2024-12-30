@@ -151,7 +151,7 @@ io.on('connection', (socket) => {
             if (Config.USER_ID_MODE === 'session') {
               const newMasterSocket = sockets[0];
               // 遍歷所有用戶找到對應的用戶數據
-              for (const [_, userData] of users.entries()) {
+              for (const userData of users.values()) {
                 masterSocket = newMasterSocket;
                 masterId = userData.id;
                 xx('New master selected in session mode:', masterId);

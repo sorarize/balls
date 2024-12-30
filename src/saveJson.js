@@ -28,7 +28,7 @@ const saveJson = (obj, mName = 'data', mPretty = true) => {
     false,
     false,
     0,
-    null
+    null,
   );
   link.dispatchEvent(event);
 };

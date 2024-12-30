@@ -26,7 +26,7 @@ const refresh = () => {
     window.location.origin +
     window.location.pathname +
     '?config=' +
-    JSON.stringify(Config)
+    JSON.stringify(Config),
   );
 };
 
