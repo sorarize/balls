@@ -3,10 +3,10 @@ export default {
   DEBUG: false,           // Whether to display debug information
 
   // User identification mode
-  USER_ID_MODE: 'session',  // 'session' | 'IP'
+  USER_ID_MODE: 'IP',  // 'session' | 'IP'
 
   // User limits
-  MAX_CIRCLES_PER_USER: 20,    // Maximum number of circles per user
+  MAX_CIRCLES_PER_USER: 30,    // Maximum number of circles per user
 
   // Circle properties
   CIRCLE_RADIUS: 10,           // Circle radius

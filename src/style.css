@@ -33,7 +33,7 @@ body {
 }
 
 .editor-container {
-  width: 100%;
+  width: 500px;
   height: 100%;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -50,6 +50,48 @@ body {
 .button-container {
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 480px) {
+  .button-container {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .preset-select {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .behavior-button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+  }
+}
+
+.preset-select {
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  outline: none;
+  min-width: 150px;
+}
+
+.preset-select:hover {
+  border-color: #066;
+}
+
+.preset-select:focus {
+  border-color: #066;
+  box-shadow: 0 0 0 2px rgba(0, 102, 102, 0.2);
 }
 
 .behavior-button {
@@ -60,4 +102,13 @@ body {
   border: none;
   background: #066;
   color: #fff;
+  transition: background-color 0.2s;
+}
+
+.behavior-button:hover {
+  background: #044;
+}
+
+.behavior-button:active {
+  background: #033;
 }

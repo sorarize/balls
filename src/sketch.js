@@ -4,29 +4,12 @@ import { Circle } from './Circle';
 import xx from '@utils/xx';
 import Config from '@config/index';
 import { CodeEditor } from './components/CodeEditor';
+import { PRESET_BEHAVIORS } from '@config/presetBehaviors';
 
 // Set global p5
 window.p5 = p5;
 
-const DEFAULT_CODE = `// This default behavior is repulsion between circles
-function update(circle, others) {
-  others.forEach(other => {
-    if (other === circle) return;
-
-    const direction = p5.Vector.sub(circle.pos, other.pos);
-    const distance = direction.mag();
-
-    if (distance < circle.minDist) {
-      direction.normalize();
-      const force = (circle.minDist - distance) / circle.minDist;
-      direction.mult(force * circle.repulsionForce);
-      circle.vel.add(direction);
-    }
-  });
-
-  circle.vel.mult(circle.friction);
-  circle.pos.add(circle.vel);
-}`;
+const DEFAULT_CODE = PRESET_BEHAVIORS['Default Repulsion'];
 
 export function setupCanvas() {
   new p5((p) => {
@@ -45,7 +28,12 @@ export function setupCanvas() {
 
     p.setup = () => {
       const parent = document.getElementById('canvas-container');
-      const canvas = p.createCanvas(600, 800);
+
+      // 根據螢幕大小調整 canvas 尺寸
+      let canvasWidth = 600;
+      let canvasHeight = 800;
+
+      const canvas = p.createCanvas(canvasWidth, canvasHeight);
       canvas.parent(parent);
       p.background(200);
       p.colorMode(p.HSL, 360, 100, 100);
@@ -56,24 +44,47 @@ export function setupCanvas() {
         debugInfo.style.display = Config.DEBUG ? 'block' : 'none';
       }
 
-      // Only add editor on desktop version
-      if (!('ontouchstart' in window)) {
-        // Create container div
-        const container = document.createElement('div');
-        container.className = 'behavior-container';
-        document.getElementById('canvas-container').appendChild(container);
+      // Create container div
+      const container = document.createElement('div');
+      container.className = 'behavior-container';
+      document.getElementById('canvas-container').appendChild(container);
 
-        // Create editor container
+      const isMobile = 'ontouchstart' in window;
+
+      // Create editor container (desktop only)
+      if (!isMobile) {
         const editorContainer = document.createElement('div');
         editorContainer.className = 'editor-container';
         container.appendChild(editorContainer);
+      }
 
-        // Create button container
-        const buttonContainer = document.createElement('div');
-        buttonContainer.className = 'button-container';
-        container.appendChild(buttonContainer);
+      // Create button container
+      const buttonContainer = document.createElement('div');
+      buttonContainer.className = 'button-container';
+      container.appendChild(buttonContainer);
 
-        // Create editor instance
+      // Create preset select
+      const presetSelect = document.createElement('select');
+      presetSelect.className = 'preset-select';
+      Object.keys(PRESET_BEHAVIORS).forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        presetSelect.appendChild(option);
+      });
+      presetSelect.addEventListener('change', () => {
+        const selectedBehavior = PRESET_BEHAVIORS[presetSelect.value];
+        if (!isMobile && editor) {
+          editor.setValue(selectedBehavior);
+        }
+        currentCode = selectedBehavior;
+
+        socketManager.setCustomBehavior(currentCode);
+      });
+      buttonContainer.appendChild(presetSelect);
+
+      // Create editor instance (desktop only)
+      if (!isMobile) {
         editor = new CodeEditor({
           value: currentCode,
           onChange: (value) => {
@@ -90,23 +101,38 @@ export function setupCanvas() {
             }
           }
         });
-        editor.mount(editorContainer);
-
-        // Create apply button
-        applyButton = p.createButton('Apply Custom Behavior (Ctrl/Cmd + Enter)');
-        applyButton.class('behavior-button');
-        applyButton.parent(buttonContainer);
-        applyButton.mousePressed(() => {
-          try {
-            xx('Sending behavior to server:', currentCode);
-            socketManager.setCustomBehavior(currentCode);
-            // Apply behavior locally
-            applyBehaviorToCircles(currentCode, circles);
-          } catch (error) {
-            xx('Error sending behavior:', error);
-          }
-        });
+        editor.mount(document.querySelector('.editor-container'));
       }
+
+      // Create apply button
+      const buttonText = isMobile ?
+        'Apply Selected Behavior' :
+        'Apply Custom Behavior (Ctrl/Cmd + Enter)';
+
+      applyButton = p.createButton(buttonText);
+      applyButton.class('behavior-button');
+      applyButton.parent(buttonContainer);
+
+      // 獲取按鈕的 DOM 元素
+      const buttonElement = applyButton.elt;
+
+      // 添加點擊和觸控事件
+      const handleApply = () => {
+        try {
+          xx('Sending behavior to server:', currentCode);
+          socketManager.setCustomBehavior(currentCode);
+          // Apply behavior locally
+          applyBehaviorToCircles(currentCode, circles);
+        } catch (error) {
+          xx('Error sending behavior:', error);
+        }
+      };
+
+      buttonElement.addEventListener('click', handleApply);
+      buttonElement.addEventListener('touchend', (e) => {
+        e.preventDefault();  // 防止觸發點擊事件
+        handleApply();
+      });
 
       // Update debug info
       function updateDebugInfo() {
