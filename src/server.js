@@ -170,6 +170,24 @@ io.on('connection', (socket) => {
     }
   });
 
+  // 處理移除單個球
+  socket.on('remove-circle', (data) => {
+    const user = users.get(userIdentifier);
+    // 只允許 master 或球的擁有者移除球
+    const circle = user.circles.find(c => c.id === data.id);
+    if (user.id === masterId || (circle && circle.userId === user.id)) {
+      // 從所有使用者的 circles 中找到並移除該球
+      for (const [_, userData] of users) {
+        const index = userData.circles.findIndex(c => c.id === data.id);
+        if (index !== -1) {
+          userData.circles.splice(index, 1);
+          break;
+        }
+      }
+      io.emit('circle-removed', { id: data.id });
+    }
+  });
+
   // 添加清除處理
   socket.on('clear-all', () => {
     // 只接受來自 master 的清除指令

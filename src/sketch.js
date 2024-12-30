@@ -157,6 +157,18 @@ function update(circle, others) {
           if (data.userId === userId) {
             userCircles = [];
           }
+        } else if (data.type === 'circle-removed') {
+          // 處理單個球被移除的情況
+          xx('Removing circle:', data.id);
+          const index = circles.findIndex(c => c.id === data.id);
+          if (index !== -1) {
+            circles.splice(index, 1);
+            // 如果是自己的球，也要從 userCircles 中移除
+            const userCircleIndex = userCircles.findIndex(c => c.id === data.id);
+            if (userCircleIndex !== -1) {
+              userCircles.splice(userCircleIndex, 1);
+            }
+          }
         }
       });
 
@@ -169,8 +181,21 @@ function update(circle, others) {
       if (isMaster) {
         xx('Master updating positions');
         // master 進行計算並發送位置更新
-        circles.forEach(circle => {
+        circles.forEach((circle, index) => {
           circle.update(circles, p);
+
+          // 檢查球是否完全離開畫布（使用球的半徑）
+          if (circle.pos.x + circle.radius < 0 ||
+              circle.pos.x - circle.radius > p.width ||
+              circle.pos.y + circle.radius < 0 ||
+              circle.pos.y - circle.radius > p.height) {
+            xx('Circle out of bounds, removing:', circle.id);
+            circles.splice(index, 1);
+            socketManager.sendData({
+              type: 'remove-circle',
+              id: circle.id,
+            });
+          }
         });
 
         // 發送位置更新給所有客戶端
