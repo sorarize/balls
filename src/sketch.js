@@ -140,6 +140,12 @@ function update(circle, others) {
                 circle.pos.y = pos.y;
                 circle.vel.x = pos.velX;
                 circle.vel.y = pos.velY;
+                if (pos.radius !== undefined) {
+                  circle.radius = pos.radius;
+                }
+                if (pos.color !== undefined) {
+                  circle.color = pos.color;
+                }
               }
             });
           }
@@ -264,6 +270,8 @@ function update(circle, others) {
           y: circle.pos.y,
           velX: circle.vel.x,
           velY: circle.vel.y,
+          radius: circle.radius,
+          color: circle.color
         }));
 
         if (positions.length > 0) {
@@ -331,7 +339,7 @@ function update(circle, others) {
           .trim();
 
         const functionBody = cleanCode
-          .replace(/^function\s+update\s*\([^)]*\)\s*{/, '')
+          .replace(/^function\s*(?:\w+\s*)?\s*\([^)]*\)\s*{/, '')
           .replace(/}$/, '');
 
         const behaviorFunction = new Function('circle', 'others', 'p', functionBody);
