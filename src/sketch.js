@@ -3,49 +3,12 @@ import { socketManager } from './WebSocketManager';
 import { Circle } from './Circle';
 import xx from '@utils/xx';
 import Config from '@config/index';
+import { CodeEditor } from './components/CodeEditor';
 
 // Set global p5
 window.p5 = p5;
 
-export function setupCanvas() {
-  new p5((p) => {
-    let circles = [];
-    let userColor = null;
-    let userId = null;
-    let userCircles = [];
-    let customBehaviorTextarea;
-    let applyButton;
-    let isMaster = false;
-    let user = {
-      id: null,
-    };
-    let behaviorMap = new Map();
-
-    p.setup = () => {
-      const canvas = p.createCanvas(800, 600);
-      canvas.parent('canvas-container');
-      p.background(200);
-      p.colorMode(p.HSL, 360, 100, 100);
-
-      // Set debug info display state
-      const debugInfo = document.getElementById('debug-info');
-      if (debugInfo) {
-        debugInfo.style.display = Config.DEBUG ? 'block' : 'none';
-      }
-
-      // Only add textarea on desktop version
-      if (!('ontouchstart' in window)) {
-        // Create container div
-        const container = p.createElement('div');
-        container.class('behavior-container');
-        container.parent('canvas-container');
-
-        // Create textarea
-        customBehaviorTextarea = p.createElement('textarea');
-        customBehaviorTextarea.class('behavior-textarea');
-        customBehaviorTextarea.parent(container);
-        customBehaviorTextarea.value(
-          `// This default behavior is repulsion between circles
+const DEFAULT_CODE = `// This default behavior is repulsion between circles
 function update(circle, others) {
   others.forEach(other => {
     if (other === circle) return;
@@ -63,20 +26,82 @@ function update(circle, others) {
 
   circle.vel.mult(circle.friction);
   circle.pos.add(circle.vel);
-}`,
-        );
+}`;
+
+export function setupCanvas() {
+  new p5((p) => {
+    let circles = [];
+    let userColor = null;
+    let userId = null;
+    let userCircles = [];
+    let currentCode = DEFAULT_CODE;
+    let applyButton;
+    let isMaster = false;
+    let user = {
+      id: null,
+    };
+    let behaviorMap = new Map();
+    let editor = null;
+
+    p.setup = () => {
+      const parent = document.getElementById('canvas-container');
+      const canvas = p.createCanvas(600, 800);
+      canvas.parent(parent);
+      p.background(200);
+      p.colorMode(p.HSL, 360, 100, 100);
+
+      // Set debug info display state
+      const debugInfo = document.getElementById('debug-info');
+      if (debugInfo) {
+        debugInfo.style.display = Config.DEBUG ? 'block' : 'none';
+      }
+
+      // Only add editor on desktop version
+      if (!('ontouchstart' in window)) {
+        // Create container div
+        const container = document.createElement('div');
+        container.className = 'behavior-container';
+        document.getElementById('canvas-container').appendChild(container);
+
+        // Create editor container
+        const editorContainer = document.createElement('div');
+        editorContainer.className = 'editor-container';
+        container.appendChild(editorContainer);
+
+        // Create button container
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'button-container';
+        container.appendChild(buttonContainer);
+
+        // Create editor instance
+        editor = new CodeEditor({
+          value: currentCode,
+          onChange: (value) => {
+            currentCode = value;
+          },
+          onApply: () => {
+            try {
+              xx('Sending behavior to server:', currentCode);
+              socketManager.setCustomBehavior(currentCode);
+              // Apply behavior locally
+              applyBehaviorToCircles(currentCode, circles);
+            } catch (error) {
+              xx('Error sending behavior:', error);
+            }
+          }
+        });
+        editor.mount(editorContainer);
 
         // Create apply button
-        applyButton = p.createButton('Apply Custom Behavior');
+        applyButton = p.createButton('Apply Custom Behavior (Ctrl/Cmd + Enter)');
         applyButton.class('behavior-button');
-        applyButton.parent(container);
+        applyButton.parent(buttonContainer);
         applyButton.mousePressed(() => {
           try {
-            const behaviorCode = customBehaviorTextarea.value();
-            xx('Sending behavior to server:', behaviorCode);
-            socketManager.setCustomBehavior(behaviorCode);
+            xx('Sending behavior to server:', currentCode);
+            socketManager.setCustomBehavior(currentCode);
             // Apply behavior locally
-            applyBehaviorToCircles(behaviorCode, circles);
+            applyBehaviorToCircles(currentCode, circles);
           } catch (error) {
             xx('Error sending behavior:', error);
           }
@@ -156,7 +181,7 @@ function update(circle, others) {
 
           // If becoming new master, need to apply current behavior
           if (isMaster) {
-            const currentBehavior = customBehaviorTextarea ? customBehaviorTextarea.value() : null;
+            const currentBehavior = currentCode;
             if (currentBehavior) {
               xx('New master applying current behavior');
               applyBehaviorToCircles(currentBehavior, circles);
@@ -231,12 +256,9 @@ function update(circle, others) {
           updateDebugInfo();
 
           // If becoming new master, need to apply current behavior
-          if (isMaster && customBehaviorTextarea) {
-            const currentBehavior = customBehaviorTextarea.value();
-            if (currentBehavior) {
-              xx('New master applying current behavior');
-              applyBehaviorToCircles(currentBehavior, circles);
-            }
+          if (isMaster && currentCode) {
+            xx('New master applying current behavior');
+            applyBehaviorToCircles(currentCode, circles);
           }
         }
       });
