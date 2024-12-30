@@ -38,6 +38,11 @@ const io = new Server(server, {
 
 // 儲存使用者資訊
 const users = new Map(); // key: IP, value: { id, color, circles: [], behaviorCode: null }
+// 追蹤每個 IP 的連接數量
+const connectionCounts = new Map(); // key: IP, value: number of connections
+// 追蹤最早連接的 socket
+let masterSocket = null;
+let masterId = null;
 
 // 生成隨機顏色
 function generateRandomColor() {
@@ -59,15 +64,14 @@ function generateUserId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-// 添加 master 追蹤
-let masterId = null;
-
 // 獲取用戶識別符
 function getUserIdentifier(socket) {
   if (Config.USER_ID_MODE === 'session') {
     // 在 session 模式下，每個連接都是新用戶
+    xx('Using session as user identifier');
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   } else {
+    xx('Using IP as user identifier');
     return getClientIP(socket);
   }
 }
@@ -77,26 +81,33 @@ io.on('connection', (socket) => {
   const userIdentifier = getUserIdentifier(socket);
   xx('Client connected with identifier:', userIdentifier);
 
+  // 更新連接計數
+  connectionCounts.set(userIdentifier, (connectionCounts.get(userIdentifier) || 0) + 1);
+  xx('Connection count for', userIdentifier, ':', connectionCounts.get(userIdentifier));
+
   // 檢查是否是已存在的使用者
   if (!users.has(userIdentifier)) {
-    users.set(userIdentifier, {
+    const newUser = {
       id: generateUserId(),
       color: generateRandomColor(),
       circles: [],
       behaviorCode: null,
-    });
+      connectedAt: Date.now()
+    };
+    users.set(userIdentifier, newUser);
   }
 
   const user = users.get(userIdentifier);
 
-  // 如果還沒有 master，設定這個連接為 master
-  if (masterId === null) {
+  // master 選擇邏輯：如果沒有 master，將當前 socket 設為 master
+  if (!masterSocket) {
+    masterSocket = socket;
     masterId = user.id;
-    xx('Set new master:', masterId, 'for client:', userIdentifier);
+    xx('No master exists, setting current socket as master:', masterId);
   }
 
   // 發送初始資料，包括使用者資訊和 master 狀態
-  const isMaster = user.id === masterId;
+  const isMaster = socket === masterSocket;
   xx('Sending init data to client:', userIdentifier, 'isMaster:', isMaster);
   socket.emit('init', {
     circles: Array.from(users.values()).flatMap(u => u.circles),
@@ -105,37 +116,47 @@ io.on('connection', (socket) => {
     userCircles: user.circles,
     behaviorCode: user.behaviorCode,
     isMaster: isMaster,
+    connectedAt: user.connectedAt,
   });
 
-  // 當 master 斷開連接時，選擇新的 master
+  // 當用戶斷開連接時
   socket.on('disconnect', () => {
     xx('Client disconnected:', userIdentifier);
     const user = users.get(userIdentifier);
 
-    if (user.id === masterId) {
-      // 如果是 master 斷開連接
-      // 1. 移除該用戶的所有球
+    // 更新連接計數
+    const currentCount = connectionCounts.get(userIdentifier);
+    const newCount = currentCount - 1;
+    xx('Connection count for', userIdentifier, 'reduced to:', newCount);
+
+    if (newCount <= 0) {
+      // 沒有更多連接時，移除計數和用戶數據
+      connectionCounts.delete(userIdentifier);
       io.emit('remove-user-circles', { userId: user.id });
-
-      // 2. 從 users Map 中移除該用戶
       users.delete(userIdentifier);
+    } else {
+      // 還有其他連接存在，更新計數
+      connectionCounts.set(userIdentifier, newCount);
+      xx('User still has', newCount, 'connections, keeping circles');
+    }
 
-      // 3. 從剩餘的用戶中選擇新的 master
-      const remainingUsers = Array.from(users.values());
-      if (remainingUsers.length > 0) {
-        masterId = remainingUsers[0].id;
-        xx('New master selected:', masterId);
-        io.emit('new-master', { masterId });
+    // 如果是 master socket 斷開連接，選擇新的 master
+    if (socket === masterSocket) {
+      // 從所有連接中選擇最早的一個作為新的 master
+      const sockets = Array.from(io.sockets.sockets.values());
+      if (sockets.length > 0) {
+        masterSocket = sockets[0];
+        const newMasterIdentifier = getUserIdentifier(masterSocket);
+        const newMasterUser = users.get(newMasterIdentifier);
+        if (newMasterUser) {
+          masterId = newMasterUser.id;
+          xx('New master selected:', masterId);
+          io.emit('new-master', { masterId });
+        }
       } else {
+        masterSocket = null;
         masterId = null;
       }
-    } else {
-      // 如果是普通用戶斷開連接
-      // 1. 移除該用戶的所有球
-      io.emit('remove-user-circles', { userId: user.id });
-
-      // 2. 從 users Map 中移除該用戶
-      users.delete(userIdentifier);
     }
   });
 
@@ -143,10 +164,10 @@ io.on('connection', (socket) => {
   socket.on('positions-update', (data) => {
     // 只接受來自 master 的位置更新
     if (user.id === masterId) {
-      xx('Received positions update from master:', userIdentifier);
+      // xx('Received positions update from master:', userIdentifier);
       io.emit('positions-updated', data);
     } else {
-      xx('Ignored positions update from non-master client:', userIdentifier);
+      // xx('Ignored positions update from non-master client:', userIdentifier);
     }
   });
 

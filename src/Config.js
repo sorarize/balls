@@ -1,4 +1,7 @@
 export const Config = {
+  // 除錯模式
+  DEBUG: false,           // 是否顯示除錯資訊
+
   // 用戶識別模式
   USER_ID_MODE: 'session',  // 'session' | 'IP'
 

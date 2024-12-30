@@ -11,6 +11,20 @@ body {
   border: 1px solid #ccc;
 }
 
+#debug-info {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 14px;
+  z-index: 1000;
+  display: none; /* 預設隱藏 */
+}
+
 .behavior-container {
   margin-top: 20px;
   width: 800px;
@@ -31,3 +45,4 @@ body {
   cursor: pointer;
   vertical-align: top;
 }
+

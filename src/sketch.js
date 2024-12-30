@@ -17,12 +17,22 @@ export function setupCanvas() {
     let customBehaviorTextarea;
     let applyButton;
     let isMaster = false;  // 添加 master 狀態
+    let user = {
+      id: null,
+      connectedAt: null
+    };
 
     p.setup = () => {
       const canvas = p.createCanvas(800, 600);
       canvas.parent('canvas-container');
       p.background(200);
       p.colorMode(p.HSL, 360, 100, 100);
+
+      // 設定除錯資訊的顯示狀態
+      const debugInfo = document.getElementById('debug-info');
+      if (debugInfo) {
+        debugInfo.style.display = Config.DEBUG ? 'block' : 'none';
+      }
 
       // 只在桌面版添加 textarea
       if (!('ontouchstart' in window)) {
@@ -65,6 +75,29 @@ function update(circle, others) {
         });
       }
 
+      // 更新除錯資訊
+      function updateDebugInfo() {
+        if (!Config.DEBUG) return;
+
+        const masterStatus = document.getElementById('master-status');
+        const userId = document.getElementById('user-id');
+        const connectTime = document.getElementById('connect-time');
+
+        if (masterStatus) {
+          masterStatus.textContent = isMaster ? '主控端' : '從屬端';
+          masterStatus.style.color = isMaster ? '#00ff00' : '#ffff00';
+        }
+
+        if (userId && user.id) {
+          userId.textContent = user.id.substring(0, 8) + '...';
+        }
+
+        if (connectTime && user.connectedAt) {
+          const time = new Date(user.connectedAt);
+          connectTime.textContent = time.toLocaleTimeString();
+        }
+      }
+
       socketManager.setMessageCallback((data) => {
         if (data.type === 'init') {
           circles = data.circles.map(c => Circle.fromJSON(c));
@@ -72,6 +105,11 @@ function update(circle, others) {
           userId = data.userId;
           userCircles = data.userCircles;
           isMaster = data.isMaster;
+          user = {
+            id: userId,
+            connectedAt: data.connectedAt
+          };
+          updateDebugInfo();
           xx('Initialized as', isMaster ? 'master' : 'slave', 'userId:', userId);
 
           // 如果是 master 且有行為代碼，立即應用
@@ -100,6 +138,7 @@ function update(circle, others) {
           }
         } else if (data.type === 'new-master') {
           isMaster = (data.masterId === userId);
+          updateDebugInfo();
           xx('Master status changed to:', isMaster, 'userId:', userId);
 
           // 如果成為新的 master，需要應用當前的行為
@@ -179,7 +218,7 @@ function update(circle, others) {
       p.background(200);
 
       if (isMaster) {
-        xx('Master updating positions');
+        // xx('Master updating positions');
         // master 進行計算並發送位置更新
         circles.forEach((circle, index) => {
           circle.update(circles, p);
@@ -208,11 +247,11 @@ function update(circle, others) {
         }));
 
         if (positions.length > 0) {
-          xx('Master sending positions update for', positions.length, 'circles');
+          // xx('Master sending positions update for', positions.length, 'circles');
           socketManager.sendPositions(positions);
         }
       } else {
-        xx('Not master, waiting for updates');
+        // xx('Not master, waiting for updates');
       }
 
       // 所有客戶端都繪製

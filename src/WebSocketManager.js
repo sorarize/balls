@@ -93,7 +93,7 @@ export class SocketManager {
     });
 
     this.socket.on('positions-updated', (data) => {
-      xx('Received positions update for', data.positions.length, 'circles');
+      // xx('Received positions update for', data.positions.length, 'circles');
       if (this.onMessageCallback) {
         this.onMessageCallback({ type: 'positions-updated', ...data });
       }
