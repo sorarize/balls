@@ -1,6 +1,6 @@
 // Settings.js
 
-import Config from './Config';
+import Config from '../config';
 import parse from 'url-parse';
 
 let enabled = true;

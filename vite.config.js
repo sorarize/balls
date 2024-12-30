@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { resolve } from 'path';
 
 export default defineConfig({
   server: {
@@ -18,4 +19,10 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: true,
   },
+  resolve: {
+    alias: {
+      '@utils': resolve(__dirname, 'src/utils'),
+      '@config': resolve(__dirname, 'src/config')
+    }
+  }
 });

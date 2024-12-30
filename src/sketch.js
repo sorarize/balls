@@ -1,8 +1,8 @@
 import p5 from 'p5';
 import { socketManager } from './WebSocketManager';
 import { Circle } from './Circle';
-import xx from './xx';
-import Config from './Config';
+import xx from '@utils/xx';
+import Config from '@config/index';
 
 // Set global p5
 window.p5 = p5;

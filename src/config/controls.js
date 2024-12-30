@@ -1,8 +1,8 @@
 import * as dat from 'dat.gui';
-import Config from './Config';
+import Config from '.';
 import Settings from './Settings';
 import { saveJson } from './saveJson';
-import { socketManager } from './WebSocketManager';
+import { socketManager } from '../WebSocketManager';
 
 export default () => {
   const { refresh, reload } = Settings;

@@ -1,7 +1,7 @@
 import './style.css';
 import { setupCanvas } from './sketch';
-import Settings from './Settings';
-import addControls from './controls';
+import Settings from './config/Settings';
+import addControls from './config/controls';
 
 Settings.init();
 addControls();

@@ -1,7 +1,7 @@
 import p5 from 'p5';
-import xx from './xx';
-import Config from './Config';
-import { roundToDecimals } from './util';
+import xx from '@utils/xx';
+import Config from '@config/index';
+import { roundToDecimals } from '@utils';
 
 export class Circle {
   constructor(x, y, color, minDist = Config.CIRCLE_MIN_DIST, id = null, userId = null, radius = null) {

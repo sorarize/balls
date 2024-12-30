@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client';
-import xx from './xx';
+import xx from '@utils/xx';
 
 class SocketManager {
   constructor() {
