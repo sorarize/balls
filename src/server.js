@@ -92,7 +92,6 @@ io.on('connection', (socket) => {
       color: generateRandomColor(),
       circles: [],
       behaviorCode: null,
-      connectedAt: Date.now(),
     };
     users.set(userIdentifier, newUser);
   }
@@ -116,7 +115,6 @@ io.on('connection', (socket) => {
     userCircles: user.circles,
     behaviorCode: user.behaviorCode,
     isMaster: isMaster,
-    connectedAt: user.connectedAt,
   });
 
   // 當用戶斷開連接時
@@ -142,20 +140,65 @@ io.on('connection', (socket) => {
 
     // 如果是 master socket 斷開連接，選擇新的 master
     if (socket === masterSocket) {
+      xx('Master disconnected, selecting new master');
       // 從所有連接中選擇最早的一個作為新的 master
       const sockets = Array.from(io.sockets.sockets.values());
       if (sockets.length > 0) {
-        masterSocket = sockets[0];
-        const newMasterIdentifier = getUserIdentifier(masterSocket);
-        const newMasterUser = users.get(newMasterIdentifier);
-        if (newMasterUser) {
-          masterId = newMasterUser.id;
-          xx('New master selected:', masterId);
-          io.emit('new-master', { masterId });
+        try {
+          // 嘗試選擇新的 master
+          const selectNewMaster = () => {
+            // 在 session 模式下，直接使用第一個可用的 socket
+            if (Config.USER_ID_MODE === 'session') {
+              const newMasterSocket = sockets[0];
+              // 遍歷所有用戶找到對應的用戶數據
+              for (const [_, userData] of users.entries()) {
+                masterSocket = newMasterSocket;
+                masterId = userData.id;
+                xx('New master selected in session mode:', masterId);
+                masterSocket.emit('you-are-master', { masterId });
+                io.emit('new-master', { masterId });
+                return true;
+              }
+            } else {
+              // IP 模式下的原有邏輯
+              for (const potentialMaster of sockets) {
+                try {
+                  const identifier = getUserIdentifier(potentialMaster);
+                  const user = users.get(identifier);
+                  if (user) {
+                    masterSocket = potentialMaster;
+                    masterId = user.id;
+                    xx('New master selected:', masterId);
+                    masterSocket.emit('you-are-master', { masterId });
+                    io.emit('new-master', { masterId });
+                    return true;
+                  }
+                } catch (error) {
+                  xx('Error selecting potential master:', error);
+                  continue;
+                }
+              }
+            }
+            return false;
+          };
+
+          if (!selectNewMaster()) {
+            xx('Failed to select any master from available sockets');
+            masterSocket = null;
+            masterId = null;
+            io.emit('master-selection-failed');
+          }
+        } catch (error) {
+          xx('Error during master transition:', error);
+          masterSocket = null;
+          masterId = null;
+          io.emit('master-selection-failed');
         }
       } else {
+        xx('No available sockets for new master');
         masterSocket = null;
         masterId = null;
+        io.emit('master-selection-failed');
       }
     }
   });

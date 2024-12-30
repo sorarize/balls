@@ -111,6 +111,20 @@ export class SocketManager {
         this.onMessageCallback({ type: 'remove-user-circles', userId: data.userId });
       }
     });
+
+    this.socket.on('master-selection-failed', () => {
+      xx('Master selection failed');
+      if (this.onMessageCallback) {
+        this.onMessageCallback({ type: 'master-selection-failed' });
+      }
+    });
+
+    this.socket.on('you-are-master', (data) => {
+      xx('Received you-are-master event:', data);
+      if (this.onMessageCallback) {
+        this.onMessageCallback({ type: 'you-are-master', masterId: data.masterId });
+      }
+    });
   }
 
   sendData(data) {

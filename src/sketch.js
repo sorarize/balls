@@ -19,7 +19,6 @@ export function setupCanvas() {
     let isMaster = false;  // 添加 master 狀態
     let user = {
       id: null,
-      connectedAt: null,
     };
 
     p.setup = () => {
@@ -81,7 +80,6 @@ function update(circle, others) {
 
         const masterStatus = document.getElementById('master-status');
         const userId = document.getElementById('user-id');
-        const connectTime = document.getElementById('connect-time');
 
         if (masterStatus) {
           masterStatus.textContent = isMaster ? '主控端' : '從屬端';
@@ -90,11 +88,6 @@ function update(circle, others) {
 
         if (userId && user.id) {
           userId.textContent = user.id.substring(0, 8) + '...';
-        }
-
-        if (connectTime && user.connectedAt) {
-          const time = new Date(user.connectedAt);
-          connectTime.textContent = time.toLocaleTimeString();
         }
       }
 
@@ -107,7 +100,6 @@ function update(circle, others) {
           isMaster = data.isMaster;
           user = {
             id: userId,
-            connectedAt: data.connectedAt,
           };
           updateDebugInfo();
           xx('Initialized as', isMaster ? 'master' : 'slave', 'userId:', userId);
@@ -206,6 +198,23 @@ function update(circle, others) {
             const userCircleIndex = userCircles.findIndex(c => c.id === data.id);
             if (userCircleIndex !== -1) {
               userCircles.splice(userCircleIndex, 1);
+            }
+          }
+        } else if (data.type === 'master-selection-failed') {
+          xx('Master selection failed, waiting for new master selection');
+          isMaster = false;
+          updateDebugInfo();
+        } else if (data.type === 'you-are-master') {
+          xx('Received direct master confirmation');
+          isMaster = (data.masterId === userId);
+          updateDebugInfo();
+
+          // 如果成為新的 master，需要應用當前的行為
+          if (isMaster && customBehaviorTextarea) {
+            const currentBehavior = customBehaviorTextarea.value();
+            if (currentBehavior) {
+              xx('New master applying current behavior');
+              applyBehaviorToCircles(currentBehavior, circles);
             }
           }
         }
