@@ -2,7 +2,7 @@ import p5 from 'p5';
 import { SocketManager } from './WebSocketManager';
 import { Circle } from './Circle';
 import xx from './xx';
-import { Config } from './Config';
+import Config from './Config';
 
 // 設定全域 p5
 window.p5 = p5;

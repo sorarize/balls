@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import xx from './xx.js';
 import os from 'os';
-import { Config } from './Config.js';
+import Config from './Config.js';
 
 // 設定 __dirname
 const __filename = fileURLToPath(import.meta.url);

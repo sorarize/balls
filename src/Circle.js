@@ -1,6 +1,6 @@
 import p5 from 'p5';
 import xx from './xx';
-import { Config } from './Config';
+import Config from './Config';
 import { roundToDecimals } from './util';
 
 export class Circle {
@@ -12,8 +12,8 @@ export class Circle {
     this.id = id || Date.now() + Math.random();
     this.userId = userId;
     this.radius = radius || Config.CIRCLE_RADIUS;
-    this.repulsionForce = Config.REPULSION_FORCE;
-    this.friction = Config.FRICTION;
+    this.repulsionForce = 0.5;
+    this.friction = 0.9;
     this.customUpdateBehavior = null;
   }
 

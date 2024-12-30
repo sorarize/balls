@@ -1,4 +1,4 @@
-export const Config = {
+export default {
   // 除錯模式
   DEBUG: true,           // 是否顯示除錯資訊
 
@@ -6,19 +6,13 @@ export const Config = {
   USER_ID_MODE: 'session',  // 'session' | 'IP'
 
   // 用戶限制
-  MAX_CIRCLES_PER_USER: 50,    // 每個用戶最多可以創建的球數量
+  MAX_CIRCLES_PER_USER: 20,    // 每個用戶最多可以創建的球數量
 
   // 球體屬性
   CIRCLE_RADIUS: 10,           // 球的半徑
-  RANDOM_RADIUS: true,        // 是否啟用隨機半徑
-  RANDOM_RADIUS_RANGE: [0.5, 1.1],  // 隨機半徑的範圍倍數
+  RANDOM_RADIUS: false,        // 是否啟用隨機半徑
+  RANDOM_RADIUS_RANGE: [0.3, 1.1],  // 隨機半徑的範圍倍數
   CIRCLE_MIN_DIST: 50,         // 球之間的最小距離
-  REPULSION_FORCE: 0.5,        // 排斥力大小
-  FRICTION: 0.95,              // 摩擦係數
-
-  // 顏色設定
-  DEFAULT_SATURATION: 70,      // 預設飽和度
-  DEFAULT_LIGHTNESS: 50,       // 預設亮度
 
   // 計算精度
   POSITION_DECIMALS: 2,        // 位置的小數點位數
