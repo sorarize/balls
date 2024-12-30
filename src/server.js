@@ -43,6 +43,8 @@ const connectionCounts = new Map(); // key: IP, value: number of connections
 // Track the earliest connected socket
 let masterSocket = null;
 let masterId = null;
+// Store all users' behaviors
+const userBehaviorMap = new Map(); // key: userId, value: behaviorCode
 
 // Generate random color
 function generateRandomColor() {
@@ -108,13 +110,22 @@ io.on('connection', (socket) => {
   // Send initial data, including user info and master status
   const isMaster = socket === masterSocket;
   xx('Sending init data to client:', userIdentifier, 'isMaster:', isMaster);
+
+  // 如果是 master，將 behavior map 轉換為普通物件
+  const userBehaviors = {};
+  if (isMaster) {
+    userBehaviorMap.forEach((code, userId) => {
+      userBehaviors[userId] = code;
+    });
+  }
+
   socket.emit('init', {
     circles: Array.from(users.values()).flatMap(u => u.circles),
     userColor: user.color,
     userId: user.id,
     userCircles: user.circles,
-    behaviorCode: user.behaviorCode,
     isMaster: isMaster,
+    userBehaviors: isMaster ? userBehaviors : null,
   });
 
   // When user disconnects
@@ -280,9 +291,23 @@ io.on('connection', (socket) => {
   socket.on('set-behavior', (data) => {
     xx('Received behavior update from client:', userIdentifier);
     const user = users.get(userIdentifier);
-    user.behaviorCode = data.code;
-    // Send to all clients, including sender
-    io.emit('behavior-updated', { code: data.code });
+
+    // Store in behavior map
+    userBehaviorMap.set(user.id, data.code);
+
+    // If master exists, send all behaviors to master
+    if (masterSocket) {
+      xx(userBehaviorMap);
+      // 將 Map 轉換為普通物件
+      const behaviorsObj = {};
+      userBehaviorMap.forEach((code, userId) => {
+        behaviorsObj[userId] = code;
+      });
+
+      masterSocket.emit('behavior-updated', {
+        behaviors: behaviorsObj,
+      });
+    }
   });
 
   // Handle config updates

@@ -19,6 +19,7 @@ export function setupCanvas() {
     let user = {
       id: null,
     };
+    let behaviorMap = new Map();
 
     p.setup = () => {
       const canvas = p.createCanvas(800, 600);
@@ -44,15 +45,24 @@ export function setupCanvas() {
         customBehaviorTextarea.class('behavior-textarea');
         customBehaviorTextarea.parent(container);
         customBehaviorTextarea.value(
-          `// This is an example custom behavior
-// Default behavior is repulsion between circles
-// You can modify this code to create new behaviors
+          `// This default behavior is repulsion between circles
 function update(circle, others) {
-  // Write your custom behavior here
-  // For example: make circles rotate, bounce, chase, etc.
+  others.forEach(other => {
+    if (other === circle) return;
 
-  // If not modified, will use default repulsion behavior
-  circle.defaultUpdate(others);
+    const direction = p5.Vector.sub(circle.pos, other.pos);
+    const distance = direction.mag();
+
+    if (distance < circle.minDist) {
+      direction.normalize();
+      const force = (circle.minDist - distance) / circle.minDist;
+      direction.mult(force * circle.repulsionForce);
+      circle.vel.add(direction);
+    }
+  });
+
+  circle.vel.mult(circle.friction);
+  circle.pos.add(circle.vel);
 }`,
         );
 
@@ -102,18 +112,24 @@ function update(circle, others) {
           };
           updateDebugInfo();
           xx('Initialized as', isMaster ? 'master' : 'slave', 'userId:', userId);
-
-          // If master and has behavior code, apply immediately
-          if (isMaster && data.behaviorCode) {
-            xx('Master applying initial behavior');
-            applyBehaviorToCircles(data.behaviorCode, circles);
-          }
         } else if (data.type === 'behavior-updated') {
-          if (customBehaviorTextarea) {
-            customBehaviorTextarea.value(data.code);
+          // Only master needs to handle behavior updates
+          if (isMaster && data.behaviors) {
+            // Update behaviorMap
+            behaviorMap = new Map(Object.entries(data.behaviors));
+
+            Object.entries(data.behaviors).forEach(([userId, behaviorCode]) => {
+              const userCircles = circles.filter(circle => circle.userId === userId);
+              if (behaviorCode) {
+                applyBehaviorToCircles(behaviorCode, userCircles);
+              } else {
+                // If no behavior, use default update
+                userCircles.forEach(circle => {
+                  circle.setCustomUpdateBehavior(null);
+                });
+              }
+            });
           }
-          // Remove isMaster check, let all users apply behavior
-          applyBehaviorToCircles(data.code, circles);
         } else if (data.type === 'positions-updated') {
           // Non-master receives position updates
           if (!isMaster) {
@@ -145,20 +161,20 @@ function update(circle, others) {
           const circle = Circle.fromJSON(data);
           circles.push(circle);
 
-          // If it's own circle, also add to userCircles and apply current behavior
+          // If it's own circle, also add to userCircles
           if (data.userId === userId) {
             if (userCircles.length >= Config.MAX_CIRCLES_PER_USER) {
               userCircles.shift();  // Remove oldest
             }
             userCircles.push(data);
+          }
 
-            // If master and has custom behavior, apply to new circle immediately
-            if (isMaster && customBehaviorTextarea) {
-              const currentBehavior = customBehaviorTextarea.value();
-              if (currentBehavior) {
-                xx('Applying current behavior to new circle');
-                applyBehaviorToCircles(currentBehavior, [circle]);
-              }
+          // Master needs to apply the user's behavior if any
+          if (isMaster) {
+            const userBehavior = behaviorMap.get(data.userId);
+            if (userBehavior) {
+              xx('Master applying user behavior to new circle');
+              applyBehaviorToCircles(userBehavior, [circle]);
             }
           }
         } else if (data.type === 'update-circle') {
@@ -321,10 +337,8 @@ function update(circle, others) {
         const behaviorFunction = new Function('circle', 'others', 'p', functionBody);
 
         circles.forEach(circle => {
-          if (circle.userId === userId) {
-            xx('Setting behavior for circle:', circle.id);
-            circle.setCustomUpdateBehavior((c, o, p) => behaviorFunction(c, o, p));
-          }
+          xx('Setting behavior for circle:', circle.id);
+          circle.setCustomUpdateBehavior((c, o, p) => behaviorFunction(c, o, p));
         });
 
         return true;

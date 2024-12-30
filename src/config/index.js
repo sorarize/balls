@@ -1,6 +1,6 @@
 export default {
   // Debug mode
-  DEBUG: true,           // Whether to display debug information
+  DEBUG: false,           // Whether to display debug information
 
   // User identification mode
   USER_ID_MODE: 'session',  // 'session' | 'IP'

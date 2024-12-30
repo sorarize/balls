@@ -88,7 +88,7 @@ class SocketManager {
     this.socket.on('behavior-updated', (data) => {
       xx('Received behavior update:', data);
       if (this.onMessageCallback) {
-        this.onMessageCallback({ type: 'behavior-updated', code: data.code });
+        this.onMessageCallback({ type: 'behavior-updated', behaviors: data.behaviors });
       }
     });
 
