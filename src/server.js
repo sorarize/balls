@@ -179,6 +179,15 @@ io.on('connection', (socket) => {
     data.color = { ...user.color };
     data.userId = user.id;
 
+    // 計算球體半徑
+    if (Config.RANDOM_RADIUS) {
+      const randomFactor = Config.RANDOM_RADIUS_RANGE[0] +
+        Math.random() * (Config.RANDOM_RADIUS_RANGE[1] - Config.RANDOM_RADIUS_RANGE[0]);
+      data.radius = Config.CIRCLE_RADIUS * randomFactor;
+    } else {
+      data.radius = Config.CIRCLE_RADIUS;
+    }
+
     if (user.circles.length >= Config.MAX_CIRCLES_PER_USER) {
       const oldCircle = user.circles.shift();
       data.id = oldCircle.id;

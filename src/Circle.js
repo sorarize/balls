@@ -4,14 +4,14 @@ import { Config } from './Config';
 import { roundToDecimals } from './util';
 
 export class Circle {
-  constructor(x, y, color, minDist = Config.CIRCLE_MIN_DIST, id = null, userId = null) {
+  constructor(x, y, color, minDist = Config.CIRCLE_MIN_DIST, id = null, userId = null, radius = null) {
     this.pos = new p5.Vector(x, y);
     this.vel = new p5.Vector(0, 0);
     this.color = color;
     this.minDist = minDist;
     this.id = id || Date.now() + Math.random();
     this.userId = userId;
-    this.radius = Config.CIRCLE_RADIUS;
+    this.radius = radius || Config.CIRCLE_RADIUS;
     this.repulsionForce = Config.REPULSION_FORCE;
     this.friction = Config.FRICTION;
     this.customUpdateBehavior = null;
@@ -75,6 +75,7 @@ export class Circle {
       minDist: this.minDist,
       id: this.id,
       userId: this.userId,
+      radius: this.radius,
     };
   }
 
@@ -88,7 +89,15 @@ export class Circle {
       ? { ...data.color }
       : { h: 0, s: 70, l: 50 };
 
-    return new Circle(data.x, data.y, color, data.minDist, data.id, data.userId);
+    return new Circle(
+      data.x,
+      data.y,
+      color,
+      data.minDist,
+      data.id,
+      data.userId,
+      data.radius
+    );
   }
 
   setCustomUpdateBehavior(behavior) {

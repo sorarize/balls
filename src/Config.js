@@ -10,6 +10,8 @@ export const Config = {
 
   // 球體屬性
   CIRCLE_RADIUS: 10,           // 球的半徑
+  RANDOM_RADIUS: true,        // 是否啟用隨機半徑
+  RANDOM_RADIUS_RANGE: [0.5, 1.1],  // 隨機半徑的範圍倍數
   CIRCLE_MIN_DIST: 50,         // 球之間的最小距離
   REPULSION_FORCE: 0.5,        // 排斥力大小
   FRICTION: 0.95,              // 摩擦係數
