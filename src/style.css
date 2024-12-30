@@ -22,7 +22,7 @@ body {
   font-family: monospace;
   font-size: 14px;
   z-index: 1000;
-  display: none; /* 預設隱藏 */
+  display: none; /* Hidden by default */
 }
 
 .behavior-container {

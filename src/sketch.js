@@ -4,7 +4,7 @@ import { Circle } from './Circle';
 import xx from './xx';
 import Config from './Config';
 
-// 設定全域 p5
+// Set global p5
 window.p5 = p5;
 
 export function setupCanvas() {
@@ -26,38 +26,38 @@ export function setupCanvas() {
       p.background(200);
       p.colorMode(p.HSL, 360, 100, 100);
 
-      // 設定除錯資訊的顯示狀態
+      // Set debug info display state
       const debugInfo = document.getElementById('debug-info');
       if (debugInfo) {
         debugInfo.style.display = Config.DEBUG ? 'block' : 'none';
       }
 
-      // 只在桌面版添加 textarea
+      // Only add textarea on desktop version
       if (!('ontouchstart' in window)) {
-        // 創建容器 div
+        // Create container div
         const container = p.createElement('div');
         container.class('behavior-container');
         container.parent('canvas-container');
 
-        // 創建 textarea
+        // Create textarea
         customBehaviorTextarea = p.createElement('textarea');
         customBehaviorTextarea.class('behavior-textarea');
         customBehaviorTextarea.parent(container);
         customBehaviorTextarea.value(
-          `// 這是一個範例自定義行為
-// 預設行為是球之間互相排斥
-// 你可以修改這段程式碼來創造新的行為
+          `// This is an example custom behavior
+// Default behavior is repulsion between circles
+// You can modify this code to create new behaviors
 function update(circle, others) {
-  // 這裡寫入你的自定義行為
-  // 例如：讓球旋轉、跳動、追逐等等
+  // Write your custom behavior here
+  // For example: make circles rotate, bounce, chase, etc.
 
-  // 如果不修改，會使用預設的排斥行為
+  // If not modified, will use default repulsion behavior
   circle.defaultUpdate(others);
 }`,
         );
 
-        // 創建應用按鈕
-        applyButton = p.createButton('應用自定義行為');
+        // Create apply button
+        applyButton = p.createButton('Apply Custom Behavior');
         applyButton.class('behavior-button');
         applyButton.parent(container);
         applyButton.mousePressed(() => {
@@ -65,7 +65,7 @@ function update(circle, others) {
             const behaviorCode = customBehaviorTextarea.value();
             xx('Sending behavior to server:', behaviorCode);
             socketManager.setCustomBehavior(behaviorCode);
-            // 直接在本地應用行為
+            // Apply behavior locally
             applyBehaviorToCircles(behaviorCode, circles);
           } catch (error) {
             xx('Error sending behavior:', error);
@@ -73,7 +73,7 @@ function update(circle, others) {
         });
       }
 
-      // 更新除錯資訊
+      // Update debug info
       function updateDebugInfo() {
         if (!Config.DEBUG) return;
 
@@ -81,7 +81,7 @@ function update(circle, others) {
         const userId = document.getElementById('user-id');
 
         if (masterStatus) {
-          masterStatus.textContent = isMaster ? '主控端' : '從屬端';
+          masterStatus.textContent = isMaster ? 'Master' : 'Slave';
           masterStatus.style.color = isMaster ? '#00ff00' : '#ffff00';
         }
 
@@ -103,7 +103,7 @@ function update(circle, others) {
           updateDebugInfo();
           xx('Initialized as', isMaster ? 'master' : 'slave', 'userId:', userId);
 
-          // 如果是 master 且有行為代碼，立即應用
+          // If master and has behavior code, apply immediately
           if (isMaster && data.behaviorCode) {
             xx('Master applying initial behavior');
             applyBehaviorToCircles(data.behaviorCode, circles);
@@ -112,10 +112,10 @@ function update(circle, others) {
           if (customBehaviorTextarea) {
             customBehaviorTextarea.value(data.code);
           }
-          // 移除 isMaster 檢查，讓所有使用者都能應用行為
+          // Remove isMaster check, let all users apply behavior
           applyBehaviorToCircles(data.code, circles);
         } else if (data.type === 'positions-updated') {
-          // 非 master 接收位置更新
+          // Non-master receives position updates
           if (!isMaster) {
             data.positions.forEach(pos => {
               const circle = circles.find(c => c.id === pos.id);
@@ -132,7 +132,7 @@ function update(circle, others) {
           updateDebugInfo();
           xx('Master status changed to:', isMaster, 'userId:', userId);
 
-          // 如果成為新的 master，需要應用當前的行為
+          // If becoming new master, need to apply current behavior
           if (isMaster) {
             const currentBehavior = customBehaviorTextarea ? customBehaviorTextarea.value() : null;
             if (currentBehavior) {
@@ -145,14 +145,14 @@ function update(circle, others) {
           const circle = Circle.fromJSON(data);
           circles.push(circle);
 
-          // 如果是自己的球，也要加入到 userCircles 並套用當前行為
+          // If it's own circle, also add to userCircles and apply current behavior
           if (data.userId === userId) {
             if (userCircles.length >= Config.MAX_CIRCLES_PER_USER) {
-              userCircles.shift();  // 移除最舊的
+              userCircles.shift();  // Remove oldest
             }
             userCircles.push(data);
 
-            // 如果是 master 且有自定義行為，立即套用到新球上
+            // If master and has custom behavior, apply to new circle immediately
             if (isMaster && customBehaviorTextarea) {
               const currentBehavior = customBehaviorTextarea.value();
               if (currentBehavior) {
@@ -166,7 +166,7 @@ function update(circle, others) {
           if (circle) {
             circle.updatePosition(data.x, data.y);
 
-            // 如果是自己的球，也要更新 userCircles
+            // If it's own circle, also update userCircles
             if (data.color.h === userColor.h) {
               const userCircle = userCircles.find(c => c.id === data.id);
               if (userCircle) {
@@ -180,20 +180,20 @@ function update(circle, others) {
           userCircles = [];
         } else if (data.type === 'remove-user-circles') {
           xx('Removing circles for user:', data.userId);
-          // 移除指定用戶的所有球
+          // Remove all circles for specified user
           circles = circles.filter(circle => circle.userId !== data.userId);
 
-          // 如果是自己的球，也要清空 userCircles
+          // If own circles, also clear userCircles
           if (data.userId === userId) {
             userCircles = [];
           }
         } else if (data.type === 'circle-removed') {
-          // 處理單個球被移除的情況
+          // Handle single circle removal
           xx('Removing circle:', data.id);
           const index = circles.findIndex(c => c.id === data.id);
           if (index !== -1) {
             circles.splice(index, 1);
-            // 如果是自己的球，也要從 userCircles 中移除
+            // If own circle, also remove from userCircles
             const userCircleIndex = userCircles.findIndex(c => c.id === data.id);
             if (userCircleIndex !== -1) {
               userCircles.splice(userCircleIndex, 1);
@@ -208,7 +208,7 @@ function update(circle, others) {
           isMaster = (data.masterId === userId);
           updateDebugInfo();
 
-          // 如果成為新的 master，需要應用當前的行為
+          // If becoming new master, need to apply current behavior
           if (isMaster && customBehaviorTextarea) {
             const currentBehavior = customBehaviorTextarea.value();
             if (currentBehavior) {
@@ -226,12 +226,11 @@ function update(circle, others) {
       p.background(200);
 
       if (isMaster) {
-        // xx('Master updating positions');
-        // master 進行計算並發送位置更新
+        // Master updates positions and sends updates
         circles.forEach((circle, index) => {
           circle.update(circles, p);
 
-          // 檢查球是否完全離開畫布（使用球的半徑）
+          // Check if circle is completely outside canvas (using circle's radius)
           if (circle.pos.x + circle.radius < 0 ||
               circle.pos.x - circle.radius > p.width ||
               circle.pos.y + circle.radius < 0 ||
@@ -242,7 +241,7 @@ function update(circle, others) {
           }
         });
 
-        // 發送位置更新給所有客戶端
+        // Send position updates to all clients
         const positions = circles.map(circle => ({
           id: circle.id,
           x: circle.pos.x,
@@ -252,14 +251,11 @@ function update(circle, others) {
         }));
 
         if (positions.length > 0) {
-          // xx('Master sending positions update for', positions.length, 'circles');
           socketManager.sendPositions(positions);
         }
-      } else {
-        // xx('Not master, waiting for updates');
       }
 
-      // 所有客戶端都繪製
+      // All clients draw
       circles.forEach(circle => {
         circle.draw(p);
       });
@@ -290,26 +286,26 @@ function update(circle, others) {
     };
 
     p.keyPressed = () => {
-      // 檢查是否有任何 textarea 或 input 被 focus
+      // Check if any textarea or input is focused
       const activeElement = document.activeElement;
       const isInputFocused = activeElement.tagName === 'TEXTAREA' ||
         activeElement.tagName === 'INPUT' ||
         activeElement.isContentEditable;
 
-      // 如果輸入元素被 focus 或不是 master，直接返回
+      // If input element is focused or not master, return directly
       if (isInputFocused || !isMaster) {
         return true;
       }
 
-      // 檢查是否按下 Ctrl + C
-      if (p.keyCode === 67 && p.keyIsDown(p.CONTROL)) {  // 67 是 'C' 的 keyCode
+      // Check if Ctrl + C is pressed
+      if (p.keyCode === 67 && p.keyIsDown(p.CONTROL)) {  // 67 is keyCode for 'C'
         xx('Master requesting clear all circles (Ctrl + C)');
         socketManager.clearAll();
-        return false;  // 防止默認行為
+        return false;  // Prevent default behavior
       }
     };
 
-    // 創建一個共用的行為應用函數
+    // Create a shared behavior application function
     function applyBehaviorToCircles(code, circles) {
       try {
         const cleanCode = code

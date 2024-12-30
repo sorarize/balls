@@ -1,22 +1,22 @@
 export default {
-  // 除錯模式
-  DEBUG: true,           // 是否顯示除錯資訊
+  // Debug mode
+  DEBUG: true,           // Whether to display debug information
 
-  // 用戶識別模式
+  // User identification mode
   USER_ID_MODE: 'session',  // 'session' | 'IP'
 
-  // 用戶限制
-  MAX_CIRCLES_PER_USER: 20,    // 每個用戶最多可以創建的球數量
+  // User limits
+  MAX_CIRCLES_PER_USER: 20,    // Maximum number of circles per user
 
-  // 球體屬性
-  CIRCLE_RADIUS: 10,           // 球的半徑
-  RANDOM_RADIUS: false,        // 是否啟用隨機半徑
-  RANDOM_RADIUS_RANGE: [0.3, 1.1],  // 隨機半徑的範圍倍數
-  CIRCLE_MIN_DIST: 50,         // 球之間的最小距離
+  // Circle properties
+  CIRCLE_RADIUS: 10,           // Circle radius
+  RANDOM_RADIUS: false,        // Whether to enable random radius
+  RANDOM_RADIUS_RANGE: [0.3, 1.1],  // Random radius range multiplier
+  CIRCLE_MIN_DIST: 50,         // Minimum distance between circles
   SATURATION: 50,
   LIGHTNESS: 60,
 
-  // 計算精度
-  POSITION_DECIMALS: 2,        // 位置的小數點位數
-  VELOCITY_DECIMALS: 2,        // 速度的小數點位數
+  // Calculation precision
+  POSITION_DECIMALS: 2,        // Decimal places for position
+  VELOCITY_DECIMALS: 2,        // Decimal places for velocity
 };

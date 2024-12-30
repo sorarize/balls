@@ -8,11 +8,11 @@ import xx from './xx.js';
 import os from 'os';
 import Config from './Config.js';
 
-// 設定 __dirname
+// Set up __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// 載入環境變數
+// Load environment variables
 dotenv.config();
 
 const app = express();
@@ -36,15 +36,15 @@ const io = new Server(server, {
   },
 });
 
-// 儲存使用者資訊
+// Store user information
 const users = new Map(); // key: IP, value: { id, color, circles: [], behaviorCode: null }
-// 追蹤每個 IP 的連接數量
+// Track number of connections per IP
 const connectionCounts = new Map(); // key: IP, value: number of connections
-// 追蹤最早連接的 socket
+// Track the earliest connected socket
 let masterSocket = null;
 let masterId = null;
 
-// 生成隨機顏色
+// Generate random color
 function generateRandomColor() {
   return {
     h: Math.random() * 360,
@@ -53,21 +53,21 @@ function generateRandomColor() {
   };
 }
 
-// 獲取客戶端 IP
+// Get client IP
 function getClientIP(socket) {
   return socket.handshake.headers['x-forwarded-for'] ||
          socket.handshake.address;
 }
 
-// 在用戶連接時生成唯一 ID
+// Generate unique ID when user connects
 function generateUserId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-// 獲取用戶識別符
+// Get user identifier
 function getUserIdentifier(socket) {
   if (Config.USER_ID_MODE === 'session') {
-    // 在 session 模式下，每個連接都是新用戶
+    // In session mode, each connection is a new user
     xx('Using session as user identifier');
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
   } else {
@@ -76,16 +76,16 @@ function getUserIdentifier(socket) {
   }
 }
 
-// Socket.IO 連接處理
+// Socket.IO connection handling
 io.on('connection', (socket) => {
   const userIdentifier = getUserIdentifier(socket);
   xx('Client connected with identifier:', userIdentifier);
 
-  // 更新連接計數
+  // Update connection count
   connectionCounts.set(userIdentifier, (connectionCounts.get(userIdentifier) || 0) + 1);
   xx('Connection count for', userIdentifier, ':', connectionCounts.get(userIdentifier));
 
-  // 檢查是否是已存在的使用者
+  // Check if user already exists
   if (!users.has(userIdentifier)) {
     const newUser = {
       id: generateUserId(),
@@ -98,14 +98,14 @@ io.on('connection', (socket) => {
 
   const user = users.get(userIdentifier);
 
-  // master 選擇邏輯：如果沒有 master，將當前 socket 設為 master
+  // Master selection logic: if no master exists, set current socket as master
   if (!masterSocket) {
     masterSocket = socket;
     masterId = user.id;
     xx('No master exists, setting current socket as master:', masterId);
   }
 
-  // 發送初始資料，包括使用者資訊和 master 狀態
+  // Send initial data, including user info and master status
   const isMaster = socket === masterSocket;
   xx('Sending init data to client:', userIdentifier, 'isMaster:', isMaster);
   socket.emit('init', {
@@ -117,40 +117,40 @@ io.on('connection', (socket) => {
     isMaster: isMaster,
   });
 
-  // 當用戶斷開連接時
+  // When user disconnects
   socket.on('disconnect', () => {
     xx('Client disconnected:', userIdentifier);
     const user = users.get(userIdentifier);
 
-    // 更新連接計數
+    // Update connection count
     const currentCount = connectionCounts.get(userIdentifier);
     const newCount = currentCount - 1;
     xx('Connection count for', userIdentifier, 'reduced to:', newCount);
 
     if (newCount <= 0) {
-      // 沒有更多連接時，移除計數和用戶數據
+      // When no more connections, remove count and user data
       connectionCounts.delete(userIdentifier);
       io.emit('remove-user-circles', { userId: user.id });
       users.delete(userIdentifier);
     } else {
-      // 還有其他連接存在，更新計數
+      // Other connections exist, update count
       connectionCounts.set(userIdentifier, newCount);
       xx('User still has', newCount, 'connections, keeping circles');
     }
 
-    // 如果是 master socket 斷開連接，選擇新的 master
+    // If master socket disconnects, select new master
     if (socket === masterSocket) {
       xx('Master disconnected, selecting new master');
-      // 從所有連接中選擇最早的一個作為新的 master
+      // Select the earliest connection as new master
       const sockets = Array.from(io.sockets.sockets.values());
       if (sockets.length > 0) {
         try {
-          // 嘗試選擇新的 master
+          // Try to select new master
           const selectNewMaster = () => {
-            // 在 session 模式下，直接使用第一個可用的 socket
+            // In session mode, use the first available socket
             if (Config.USER_ID_MODE === 'session') {
               const newMasterSocket = sockets[0];
-              // 遍歷所有用戶找到對應的用戶數據
+              // Iterate through all users to find corresponding user data
               for (const userData of users.values()) {
                 masterSocket = newMasterSocket;
                 masterId = userData.id;
@@ -160,7 +160,7 @@ io.on('connection', (socket) => {
                 return true;
               }
             } else {
-              // IP 模式下的原有邏輯
+              // Original logic for IP mode
               for (const potentialMaster of sockets) {
                 try {
                   const identifier = getUserIdentifier(potentialMaster);
@@ -203,9 +203,9 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 添加位置更新事件
+  // Add position update event
   socket.on('positions-update', (data) => {
-    // 只接受來自 master 的位置更新
+    // Only accept position updates from master
     if (user.id === masterId) {
       // xx('Received positions update from master:', userIdentifier);
       io.emit('positions-updated', data);
@@ -214,15 +214,15 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 處理新的圓形
+  // Handle new circle
   socket.on('new-circle', (data) => {
     const user = users.get(userIdentifier);
 
-    // 添加使用者資訊（創建副本）
+    // Add user information (create copy)
     data.color = { ...user.color };
     data.userId = user.id;
 
-    // 計算球體半徑
+    // Calculate circle radius
     if (Config.RANDOM_RADIUS) {
       const randomFactor = Config.RANDOM_RADIUS_RANGE[0] +
         Math.random() * (Config.RANDOM_RADIUS_RANGE[1] - Config.RANDOM_RADIUS_RANGE[0]);
@@ -243,13 +243,13 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 處理移除單個球
+  // Handle circle removal
   socket.on('remove-circle', (data) => {
     const user = users.get(userIdentifier);
-    // 只允許 master 或球的擁有者移除球
+    // Only allow master or circle owner to remove circle
     const circle = user.circles.find(c => c.id === data.id);
     if (user.id === masterId || (circle && circle.userId === user.id)) {
-      // 從所有使用者的 circles 中找到並移除該球
+      // Find and remove the circle from all users' circles
       for (const userData of users.values()) {
         const index = userData.circles.findIndex(c => c.id === data.id);
         if (index !== -1) {
@@ -261,16 +261,16 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 添加清除處理
+  // Add clear handling
   socket.on('clear-all', () => {
-    // 只接受來自 master 的清除指令
+    // Only accept clear command from master
     if (user.id === masterId) {
       xx('Clearing all circles from server (master request)');
-      // 清除所有使用者的圓形
+      // Clear all users' circles
       for (const user of users.values()) {
         user.circles = [];
       }
-      // 廣播清除事件給所有客戶端
+      // Broadcast clear event to all clients
       io.emit('clear-all');
     } else {
       xx('Ignored clear-all request from non-master client');
@@ -281,44 +281,44 @@ io.on('connection', (socket) => {
     xx('Received behavior update from client:', userIdentifier);
     const user = users.get(userIdentifier);
     user.behaviorCode = data.code;
-    // 改成發送給所有客戶端，包括發送者
+    // Send to all clients, including sender
     io.emit('behavior-updated', { code: data.code });
   });
 
-  // 處理設定更新
+  // Handle config updates
   socket.on('update-config', (newConfig) => {
     xx('Received config update:', newConfig);
-    // 更新伺服器端的設定
+    // Update server-side config
     Object.assign(Config, newConfig);
-    // 廣播給所有客戶端
+    // Broadcast to all clients
     io.emit('config-updated', Config);
   });
 });
 
-// 在檔案開頭附近加入這行來檢查部署環境
+// Add this line near the beginning of the file to check deployment environment
 xx('Current environment:', {
   NODE_ENV: process.env.NODE_ENV,
   PORT: process.env.PORT,
   RAILWAY_STATIC_URL: process.env.RAILWAY_STATIC_URL,
 });
 
-// 生產環境中提供靜態檔案
+// Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  // 提供靜態檔案
+  // Serve static files
   app.use(express.static(join(__dirname, '../dist')));
 
-  // 所有的路由都返回 index.html
+  // Return index.html for all routes
   app.get('*', (req, res) => {
     res.sendFile(join(__dirname, '../dist/index.html'));
   });
 } else {
-  // 開發環境的路由
+  // Development route
   app.get('/', (req, res) => {
-    res.send('Socket.IO 伺服器運行中');
+    res.send('Socket.IO Server Running');
   });
 }
 
-// 獲取本機 IP 地址的函數
+// Function to get local IP addresses
 function getLocalIPs() {
   const interfaces = os.networkInterfaces();
   const addresses = [];
@@ -334,7 +334,7 @@ function getLocalIPs() {
   return addresses;
 }
 
-// 開發環境固定使用 3001 端口
+// Development environment uses fixed port 3001
 const PORT = process.env.NODE_ENV === 'production'
   ? (process.env.PORT || 3001)
   : 3001;
@@ -343,7 +343,7 @@ server.listen(PORT, () => {
   xx(`Server running on port ${PORT}`);
   xx('Environment:', process.env.NODE_ENV);
 
-  // 顯示所有可用的 IP 地址
+  // Display all available IP addresses
   const ips = getLocalIPs();
   xx('Available on:');
   xx(`  > Local:    http://localhost:${PORT}`);
