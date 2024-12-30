@@ -6,8 +6,8 @@
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src/ client/",
-    "lint:fix": "eslint src/ client/ --fix",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
     "prepare": "husky install",
     "install:prod": "npm ci --omit=dev"
   },

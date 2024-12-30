@@ -1,0 +1,33 @@
+body {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f0f0;
+}
+
+#canvas-container {
+  border: 1px solid #ccc;
+}
+
+.behavior-container {
+  margin-top: 20px;
+  width: 800px;
+}
+
+.behavior-textarea {
+  width: 700px;
+  height: 200px;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 14px;
+  margin-right: 10px;
+}
+
+.behavior-button {
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  vertical-align: top;
+}

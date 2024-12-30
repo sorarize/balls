@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import xx from './xx.js';
 import os from 'os';
+import { Config } from './Config.js';
 
 // 設定 __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -36,7 +37,7 @@ const io = new Server(server, {
 });
 
 // 儲存使用者資訊
-const users = new Map(); // key: IP, value: { color, circles: [] }
+const users = new Map(); // key: IP, value: { id, color, circles: [], behaviorCode: null }
 
 // 生成隨機顏色
 function generateRandomColor() {
@@ -53,60 +54,144 @@ function getClientIP(socket) {
          socket.handshake.address;
 }
 
+// 在用戶連接時生成唯一 ID
+function generateUserId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+// 添加 master 追蹤
+let masterId = null;
+
+// 獲取用戶識別符
+function getUserIdentifier(socket) {
+  if (Config.USER_ID_MODE === 'session') {
+    // 在 session 模式下，每個連接都是新用戶
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  } else {
+    return getClientIP(socket);
+  }
+}
+
 // Socket.IO 連接處理
 io.on('connection', (socket) => {
-  const clientIP = getClientIP(socket);
-  xx('Client connected from:', clientIP);
+  const userIdentifier = getUserIdentifier(socket);
+  xx('Client connected with identifier:', userIdentifier);
 
   // 檢查是否是已存在的使用者
-  if (!users.has(clientIP)) {
-    users.set(clientIP, {
+  if (!users.has(userIdentifier)) {
+    users.set(userIdentifier, {
+      id: generateUserId(),
       color: generateRandomColor(),
       circles: [],
+      behaviorCode: null,
     });
   }
 
-  const user = users.get(clientIP);
+  const user = users.get(userIdentifier);
 
-  // 發送初始資料，包括使用者資訊
+  // 如果還沒有 master，設定這個連接為 master
+  if (masterId === null) {
+    masterId = user.id;
+    xx('Set new master:', masterId, 'for client:', userIdentifier);
+  }
+
+  // 發送初始資料，包括使用者資訊和 master 狀態
+  const isMaster = user.id === masterId;
+  xx('Sending init data to client:', userIdentifier, 'isMaster:', isMaster);
   socket.emit('init', {
     circles: Array.from(users.values()).flatMap(u => u.circles),
     userColor: user.color,
+    userId: user.id,
     userCircles: user.circles,
+    behaviorCode: user.behaviorCode,
+    isMaster: isMaster,
+  });
+
+  // 當 master 斷開連接時，選擇新的 master
+  socket.on('disconnect', () => {
+    xx('Client disconnected:', userIdentifier);
+    const user = users.get(userIdentifier);
+
+    if (user.id === masterId) {
+      // 如果是 master 斷開連接
+      // 1. 移除該用戶的所有球
+      io.emit('remove-user-circles', { userId: user.id });
+
+      // 2. 從 users Map 中移除該用戶
+      users.delete(userIdentifier);
+
+      // 3. 從剩餘的用戶中選擇新的 master
+      const remainingUsers = Array.from(users.values());
+      if (remainingUsers.length > 0) {
+        masterId = remainingUsers[0].id;
+        xx('New master selected:', masterId);
+        io.emit('new-master', { masterId });
+      } else {
+        masterId = null;
+      }
+    } else {
+      // 如果是普通用戶斷開連接
+      // 1. 移除該用戶的所有球
+      io.emit('remove-user-circles', { userId: user.id });
+
+      // 2. 從 users Map 中移除該用戶
+      users.delete(userIdentifier);
+    }
+  });
+
+  // 添加位置更新事件
+  socket.on('positions-update', (data) => {
+    // 只接受來自 master 的位置更新
+    if (user.id === masterId) {
+      xx('Received positions update from master:', userIdentifier);
+      io.emit('positions-updated', data);
+    } else {
+      xx('Ignored positions update from non-master client:', userIdentifier);
+    }
   });
 
   // 處理新的圓形
   socket.on('new-circle', (data) => {
-    const user = users.get(clientIP);
+    const user = users.get(userIdentifier);
 
-    // 添加使用者顏色（創建副本）
+    // 添加使用者資訊（創建副本）
     data.color = { ...user.color };
+    data.userId = user.id;
 
-    if (user.circles.length >= 10) {
-      const oldCircle = user.circles.shift(); // 移除最舊的
+    if (user.circles.length >= Config.MAX_CIRCLES_PER_USER) {
+      const oldCircle = user.circles.shift();
       data.id = oldCircle.id;
-      user.circles.push(data);  // 將更新後的圓形放到末端
+      user.circles.push(data);
       io.emit('update-circle', data);
     } else {
       data.id = Date.now() + Math.random();
       user.circles.push(data);
-      socket.broadcast.emit('circle-added', data);
+      io.emit('circle-added', data);
     }
   });
 
   // 添加清除處理
   socket.on('clear-all', () => {
-    xx('Clearing all circles from server');
-    // 清除所有使用者的圓形
-    for (const user of users.values()) {
-      user.circles = [];
+    // 只接受來自 master 的清除指令
+    if (user.id === masterId) {
+      xx('Clearing all circles from server (master request)');
+      // 清除所有使用者的圓形
+      for (const user of users.values()) {
+        user.circles = [];
+      }
+      // 廣播清除事件給所有客戶端
+      io.emit('clear-all');
+    } else {
+      xx('Ignored clear-all request from non-master client');
     }
-    // 廣播清除事件給所有客戶端
-    io.emit('clear-all');
   });
 
-  socket.on('disconnect', () => {
-    xx('Client disconnected:', clientIP);
+  socket.on('set-behavior', (data) => {
+    xx('Received behavior update from client:', userIdentifier);
+    const user = users.get(userIdentifier);
+    user.behaviorCode = data.code;
+    // 改成發送給所有客戶端，包括發送者
+    io.emit('behavior-updated', { code: data.code });
   });
 });
 

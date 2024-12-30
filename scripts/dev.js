@@ -3,7 +3,7 @@ const nodemon = require('nodemon');
 
 // 啟動 nodemon
 nodemon({
-  script: 'src/server.js',
+  script: 'server.js',
   watch: ['src'],
   ext: 'js,json',
 }).on('start', () => {

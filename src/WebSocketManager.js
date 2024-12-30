@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client';
-import xx from '../src/xx';
+import xx from './xx';
 
 export class SocketManager {
   constructor() {
@@ -46,7 +46,10 @@ export class SocketManager {
           type: 'init',
           circles: data.circles,
           userColor: data.userColor,
+          userId: data.userId,
           userCircles: data.userCircles,
+          behaviorCode: data.behaviorCode,
+          isMaster: data.isMaster,
         });
       }
     });
@@ -81,6 +84,33 @@ export class SocketManager {
         this.onMessageCallback({ type: 'clear-all' });
       }
     });
+
+    this.socket.on('behavior-updated', (data) => {
+      xx('Received behavior update:', data);
+      if (this.onMessageCallback) {
+        this.onMessageCallback({ type: 'behavior-updated', code: data.code });
+      }
+    });
+
+    this.socket.on('positions-updated', (data) => {
+      xx('Received positions update for', data.positions.length, 'circles');
+      if (this.onMessageCallback) {
+        this.onMessageCallback({ type: 'positions-updated', ...data });
+      }
+    });
+
+    this.socket.on('new-master', (data) => {
+      if (this.onMessageCallback) {
+        this.onMessageCallback({ type: 'new-master', ...data });
+      }
+    });
+
+    this.socket.on('remove-user-circles', (data) => {
+      xx('Removing circles for user:', data.userId);
+      if (this.onMessageCallback) {
+        this.onMessageCallback({ type: 'remove-user-circles', userId: data.userId });
+      }
+    });
   }
 
   sendData(data) {
@@ -98,6 +128,22 @@ export class SocketManager {
   clearAll() {
     if (this.socket && this.socket.connected) {
       this.socket.emit('clear-all');
+      return true;
+    }
+    return false;
+  }
+
+  setCustomBehavior(behaviorCode) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('set-behavior', { code: behaviorCode });
+      return true;
+    }
+    return false;
+  }
+
+  sendPositions(positions) {
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('positions-update', { positions });
       return true;
     }
     return false;
